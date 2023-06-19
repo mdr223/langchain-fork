@@ -6,6 +6,7 @@ class AgentType(str, Enum):
     REACT_DOCSTORE = "react-docstore"
     SELF_ASK_WITH_SEARCH = "self-ask-with-search"
     CONVERSATIONAL_REACT_DESCRIPTION = "conversational-react-description"
+    REDSHIFT_CONVERSATIONAL_REACT_DESCRIPTION = "redshift-conversational-react-description"
     CHAT_ZERO_SHOT_REACT_DESCRIPTION = "chat-zero-shot-react-description"
     CHAT_CONVERSATIONAL_REACT_DESCRIPTION = "chat-conversational-react-description"
     STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION = (
