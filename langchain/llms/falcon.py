@@ -13,7 +13,7 @@ class Falcon(LLM):
 
     model_name: str = Field("falcon-7b-instruct-bf16-2023-06-08-17-59-43-889", alias="model")
     """Model name to use."""
-    max_tokens: int = -1
+    max_tokens: int = 512
     """The maximum number of tokens to generate in the completion.
     -1 returns as many tokens as possible given the prompt and
     the models maximal context size."""
