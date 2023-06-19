@@ -17,6 +17,7 @@ from langchain.llms.ctransformers import CTransformers
 from langchain.llms.databricks import Databricks
 from langchain.llms.deepinfra import DeepInfra
 from langchain.llms.fake import FakeListLLM
+from langchain.llms.falcon import Falcon
 from langchain.llms.forefrontai import ForefrontAI
 from langchain.llms.google_palm import GooglePalm
 from langchain.llms.gooseai import GooseAI
