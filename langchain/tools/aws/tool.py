@@ -76,7 +76,7 @@ class CreateIAMRole(AWSTool):
                 AssumeRolePolicyDocument=ASSUME_ROLE_POLICY_DOC,
                 Description='LLM agent created role',
             )
-            response = f"Successfully created role {role_name}"
+            response = f"Successfully created role {role_name}."
 
         except Exception as e:
             response = e
@@ -91,7 +91,7 @@ class AttachIAMPolicy(AWSTool):
     description = (
         "This tool attaches the given IAM policy to the given IAM role."
         "The input to this tool should be a comma separated list of strings of length two, representing the IAM policy you wish to attach and the IAM role you wish to attach it to."
-        "For example, `SomePolicy,SomeRole` would be the input if you wanted to attach the policy `SomePolicy` to the role `SomeRole`.
+        "For example, `SomePolicy,SomeRole` would be the input if you wanted to attach the policy `SomePolicy` to the role `SomeRole`."
         "The tool outputs a message indicating the success or failure of the attach policy operation."
     )
 
@@ -116,7 +116,7 @@ class AttachIAMPolicy(AWSTool):
                 RoleName=role_name,
                 PolicyArn=f"arn:aws:iam::aws:policy/{policy_name}",
             )
-            response = f"Successfully attached policy {policy_name} to role {role_name}"
+            response = f"Successfully attached policy {policy_name} to role {role_name}."
 
         except Exception as e:
             response = e
@@ -131,7 +131,7 @@ class CreateRedshiftServerlessNamespace(AWSTool):
     description = (
         "This tool creates a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account."
         "The input to this tool should be the name of the namespace the user wishes to create."
-        "For example, `SomeNamespace` would be the input if you wanted to create the namespace `SomeNamespace`.
+        "For example, `SomeNamespace` would be the input if you wanted to create the namespace `SomeNamespace`."
         "The tool outputs a message indicating the success or failure of the create namespace operation."
     )
 
@@ -146,7 +146,7 @@ class CreateRedshiftServerlessNamespace(AWSTool):
         response = None
         try:
             _ = rs_client.create_namespace(namespaceName=namespace_name)
-            response = f"Successfully created Redshift Serverless namespace {namespace_name}"
+            response = f"Successfully created Redshift Serverless namespace {namespace_name}."
         except Exception as e:
             response = e
 
@@ -159,7 +159,7 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
     description = (
         "This tool creates a Redshift Serverless workgroup using the given `workgroup_name` in the namespace specified by `namespace_name`."
         "The input to this tool should be a comma separated list of strings of length two, representing the name of the workgroup you wish to create (i.e. `workgroup_name`) and the namespace it should be created in (i.e. `namespace_name`)."
-        "For example, `SomeWorkgroup,SomeNamespace` would be the input if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace`.
+        "For example, `SomeWorkgroup,SomeNamespace` would be the input if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace`."
         "The tool outputs a message indicating the success or failure of the create workgroup operation."
     )
 
@@ -184,7 +184,7 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
                 workgroupName=workgroup_name,
                 namespaceName=namespace_name,
             )
-            response = f"Successfully created Redshift Serverless workgroup {workgroup_name} in namespace {namespace_name}"
+            response = f"Successfully created Redshift Serverless workgroup {workgroup_name} in namespace {namespace_name}."
         except Exception as e:
             response = e
 
