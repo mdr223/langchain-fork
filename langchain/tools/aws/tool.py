@@ -32,6 +32,8 @@ ASSUME_ROLE_POLICY_DOC = """{
 class AWSTool(BaseTool):
     """Tool that has capability to query the Serper.dev Google Search API
     and get back json."""
+    name = ""       # override
+    description ""  # override
 
     def _run(
         self,
