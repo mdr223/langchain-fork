@@ -9,6 +9,7 @@ from langchain.callbacks.manager import (
 from langchain.tools.base import BaseTool
 
 import boto3
+import json
 import redshift_connector
 
 import pandas as pd
@@ -30,6 +31,21 @@ ASSUME_ROLE_POLICY_DOC = """{
         }
     ]
 }"""
+DEFAULT_BUCKET_POLICY = {
+    'Version': '2012-10-17',
+    'Statement': [{
+        'Sid': 'DefaultBucketPerm',
+        'Effect': 'Allow',
+        'Principal': 'arn:aws:iam::518251513740:*',
+        'Action': [
+            's3:ListBucket',
+            's3:GetObject',
+            's3:PutObject',
+            's3:DeleteObject'
+        ],
+        'Resource': f'arn:aws:s3:::REPLACE/*'
+    }]
+}
 ADMIN_USER_PASSWORD = "testing123"
 ADMIN_USERNAME = "agentadmin"
 DB_NAME = "dev"
@@ -180,7 +196,15 @@ class CreateS3Bucket(AWSTool):
 
         response = None
         try:
-            response = s3_client.create_bucket(Bucket=bucket_name)
+            # create bucket
+            _ = s3_client.create_bucket(Bucket=bucket_name)
+            
+            # Convert the policy from JSON dict to string
+            bucket_policy = json.dumps(bucket_policy).replace("REPLACE", bucket_name)
+
+            # Set the new policy
+            s3_client.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy)
+
             response = f"Successfully created S3 Bucket with name {bucket_name}."
         except Exception as e:
             response = e
