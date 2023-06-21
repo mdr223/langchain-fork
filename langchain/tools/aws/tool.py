@@ -59,7 +59,7 @@ DEFAULT_BUCKET_POLICY = {
     ]
 }
 
-ADMIN_USER_PASSWORD = "testing123"
+ADMIN_USER_PASSWORD = "Testing123"
 ADMIN_USERNAME = "agentadmin"
 DB_NAME = "dev"
 
