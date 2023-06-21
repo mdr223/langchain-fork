@@ -143,7 +143,7 @@ class CreateKMSKey(AWSTool):
 
     def _run(
         self,
-        input: str
+        input: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
