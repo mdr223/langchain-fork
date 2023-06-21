@@ -320,6 +320,71 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
         return response
 
 
+class DeleteRedshiftServerlessNamespace(AWSTool):
+    """Delete a namespace from Redshift Serverless in the user's AWS account."""
+
+    name = "Delete a namespace from Redshift Serverless"
+    description = (
+        "This tool deletes a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account."
+        "The input to this tool should be a string representing the name of the namespace the user wishes to delete."
+        "For example, `SomeNamespace` would be the input if you wanted to delete the namespace `SomeNamespace`."
+        "The tool outputs a message indicating the success or failure of the delete namespace operation."
+    )
+
+    def _run(
+        self,
+        namespace_name: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool."""
+        rs_client = boto3.client('redshift-serverless')
+
+        response = None
+        try:
+            _ = rs_client.delete_namespace(namespaceName=namespace_name)
+            response = f"Successfully deleted Redshift Serverless namespace {namespace_name}."
+        except Exception as e:
+            response = e
+
+        return response
+
+
+class DeleteRedshiftServerlessWorkgroup(AWSTool):
+    """Delete a workgroup from Redshift Serverless in the user's AWS account."""
+
+    name = "Delete a workgroup from Redshift Serverless"
+    description = (
+        "This tool deletes a Redshift Serverless workgroup using the given `workgroup_name` in the namespace specified by `namespace_name`."
+        "The input to this tool should be a comma separated list of strings of length two, representing the name of the workgroup you wish to delete (i.e. `workgroup_name`) and the namespace it should be deleted from (i.e. `namespace_name`)."
+        "For example, `SomeWorkgroup,SomeNamespace` would be the input if you wanted to delete the workgroup `SomeWorkgroup` in the namespace `SomeNamespace`."
+        "The tool outputs a message indicating the success or failure of the delete workgroup operation."
+    )
+
+    def _run(
+        self,
+        workgroup_and_namespace_names: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool."""
+        # parse policy_name and role_name
+        try:
+            workgroup_name = workgroup_and_namespace_names.split(',')[0]
+            namespace_name = workgroup_and_namespace_names.split(',')[1]
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to DeleteRedshiftServerlessWorkgroup tool")
+
+        rs_client = boto3.client('redshift-serverless')
+
+        response = None
+        try:
+            res = rs_client.create_workgroup(workgroupName=workgroup_name)
+            response = f"Successfully deleted Redshift Serverless workgroup {workgroup_name} in namespace {res['namespaceName']}."
+        except Exception as e:
+            response = e
+
+        return response
+
+
 class LoadTableFromS3(AWSTool):
     """Load a table from a parquet file or prefix in S3 into Redshift."""
 
@@ -356,15 +421,14 @@ class LoadTableFromS3(AWSTool):
 
         # try executing query to load table
         # TODO: remove dummy values
-        create_table_cmd = """CREATE TABLE mini_table
-        (
+        create_table_cmd = """CREATE TABLE mini_table (
             order_id INTEGER NOT NULL,
             customer_id INTEGER NOT NULL,
             product_id INTEGER NOT NULL,
             amount INTEGER NOT NULL
         );
         """
-        copy_table_cmd = f"""COPY mini_table FROM '{s3_key_or_prefix}' IAM_ROLE 'arn:aws:iam::518251513740:instance-profile/test-rollm-agent-role' FORMAT AS parquet"""
+        copy_table_cmd = f"""COPY mini_table FROM '{s3_key_or_prefix}' IAM_ROLE 'arn:aws:iam::518251513740:role/test-rollm-agent-role' FORMAT AS parquet"""
 
         response = None
         try:
