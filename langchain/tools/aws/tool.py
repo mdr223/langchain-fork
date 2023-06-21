@@ -32,20 +32,33 @@ ASSUME_ROLE_POLICY_DOC = """{
     ]
 }"""
 DEFAULT_BUCKET_POLICY = {
-    'Version': '2012-10-17',
-    'Statement': [{
-        'Sid': 'DefaultBucketPerm',
-        'Effect': 'Allow',
-        'Principal': 'arn:aws:iam::518251513740:*',
-        'Action': [
-            's3:ListBucket',
-            's3:GetObject',
-            's3:PutObject',
-            's3:DeleteObject'
-        ],
-        'Resource': f'arn:aws:s3:::REPLACE/*'
-    }]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DefaultBucketPermList",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::518251513740:root"
+            },
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::REPLACE"
+        },
+        {
+            "Sid": "DefaultBucketPermRW",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::518251513740:root"
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject"
+            ],
+            "Resource": "arn:aws:s3:::REPLACE/*"
+        }
+    ]
 }
+
 ADMIN_USER_PASSWORD = "testing123"
 ADMIN_USERNAME = "agentadmin"
 DB_NAME = "dev"
