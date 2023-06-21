@@ -200,7 +200,7 @@ class CreateS3Bucket(AWSTool):
             _ = s3_client.create_bucket(Bucket=bucket_name)
             
             # Convert the policy from JSON dict to string
-            bucket_policy = json.dumps(bucket_policy).replace("REPLACE", bucket_name)
+            bucket_policy = json.dumps(DEFAULT_BUCKET_POLICY).replace("REPLACE", bucket_name)
 
             # Set the new policy
             s3_client.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy)
