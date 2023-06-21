@@ -7,6 +7,7 @@ from langchain.tools.aws.tool import (
     CreateRedshiftServerlessWorkgroup,
     LoadTableFromS3,
     CreateS3Bucket,
+    CreateKMSKey,
 )
 
 __all__ = [
