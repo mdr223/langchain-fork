@@ -298,7 +298,7 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        # parse policy_name and role_name
+        # parse workgroup_name and namespace_name
         try:
             workgroup_name = workgroup_and_namespace_names.split(',')[0]
             namespace_name = workgroup_and_namespace_names.split(',')[1]
@@ -355,29 +355,22 @@ class DeleteRedshiftServerlessWorkgroup(AWSTool):
     name = "Delete a workgroup from Redshift Serverless"
     description = (
         "This tool deletes a Redshift Serverless workgroup using the given `workgroup_name` in the namespace specified by `namespace_name`."
-        "The input to this tool should be a comma separated list of strings of length two, representing the name of the workgroup you wish to delete (i.e. `workgroup_name`) and the namespace it should be deleted from (i.e. `namespace_name`)."
-        "For example, `SomeWorkgroup,SomeNamespace` would be the input if you wanted to delete the workgroup `SomeWorkgroup` in the namespace `SomeNamespace`."
+        "The input to this tool should be a string representing the name of the workgroup you wish to delete (i.e. `workgroup_name`)."
+        "For example, `SomeWorkgroup` would be the input if you wanted to delete the workgroup `SomeWorkgroup`."
         "The tool outputs a message indicating the success or failure of the delete workgroup operation."
     )
 
     def _run(
         self,
-        workgroup_and_namespace_names: str,
+        workgroup_name: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        # parse policy_name and role_name
-        try:
-            workgroup_name = workgroup_and_namespace_names.split(',')[0]
-            namespace_name = workgroup_and_namespace_names.split(',')[1]
-        except Exception as e:
-            raise Exception("Failed to parse LLM input to DeleteRedshiftServerlessWorkgroup tool")
-
         rs_client = boto3.client('redshift-serverless')
 
         response = None
         try:
-            res = rs_client.create_workgroup(workgroupName=workgroup_name)
+            res = rs_client.delete_workgroup(workgroupName=workgroup_name)
             response = f"Successfully deleted Redshift Serverless workgroup {workgroup_name} in namespace {res['namespaceName']}."
         except Exception as e:
             response = e
