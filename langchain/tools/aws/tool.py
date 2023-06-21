@@ -9,6 +9,9 @@ from langchain.callbacks.manager import (
 from langchain.tools.base import BaseTool
 
 import boto3
+import redshift_connector
+
+import pandas as pd
 
 # DEFINITION
 # TODO: have AWS account ID read from env. variable
@@ -27,11 +30,13 @@ ASSUME_ROLE_POLICY_DOC = """{
         }
     ]
 }"""
+ADMIN_USER_PASSWORD = "testing123"
+ADMIN_USERNAME = "agentadmin"
+DB_NAME = "dev"
 
 
 class AWSTool(BaseTool):
-    """Tool that has capability to query the Serper.dev Google Search API
-    and get back json."""
+    """Base class for a tool that calls some specific functionality of the AWS CLI."""
     name = ""         # override
     description = ""  # override
 
@@ -126,28 +131,113 @@ class AttachIAMPolicy(AWSTool):
         return response
 
 
+class CreateKMSKey(AWSTool):
+    """Create key in Key Management Service in the user's AWS account."""
+
+    name = "Create Key Management Service (KMS) key"
+    description = (
+        "This tool creates a KMS key."
+        "The tool takes no input."
+        "The tool outputs the `KeyId` of the key that it created."
+    )
+
+    def _run(
+        self,
+        input: str
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool."""
+        kms_client = boto3.client('kms')
+
+        response = None
+        try:
+            response = kms_client.create_key()
+            response = f"Successfully created KMS key with `KeyId`: {response['KeyId']}."
+        except Exception as e:
+            response = e
+
+        return response
+
+
+class CreateS3Bucket(AWSTool):
+    """Create S3 Bucket in the user's AWS account."""
+
+    name = "Create S3 Bucket"
+    description = (
+        "This tool creates an S3 bucket with the given bucket name."
+        "The input to this tool should be the name of the S3 bucket you want to create."
+        "For example, `MyBucket` would be the input if you wanted to create the S3 bucket `MyBucket`."
+        "The tool outputs a message indicating the success or failure of the create S3 bucket operation."
+    )
+
+    def _run(
+        self,
+        bucket_name: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool."""
+        s3_client = boto3.client('s3')
+
+        response = None
+        try:
+            response = s3_client.create_bucket(Bucket=bucket_name)
+            response = f"Successfully created S3 Bucket with name {bucket_name}."
+        except Exception as e:
+            response = e
+
+        return response
+
+
 class CreateRedshiftServerlessNamespace(AWSTool):
     """Create a namespace for Redshift Serverless in the user's AWS account."""
 
     name = "Create a namespace for Redshift Serverless"
     description = (
         "This tool creates a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account."
-        "The input to this tool should be the name of the namespace the user wishes to create."
+        "The input to this tool should be a comma separated list of strings of length one or length two."
+        "If the input is of length one, the string represents the name of the namespace the user wishes to create."
+        "If the input is of length two, the first string represents the name of the namespace and the second string represents the KMS KeyId to be used in creating the namespace."
         "For example, `SomeNamespace` would be the input if you wanted to create the namespace `SomeNamespace`."
+        "As another example, `SomeNamespace,SomeKeyId` would be the input if you wanted to create the namespace `SomeNamespace` with the KMS key with KeyId `SomeKeyId`."
         "The tool outputs a message indicating the success or failure of the create namespace operation."
     )
 
     def _run(
         self,
-        namespace_name: str,
+        namespace_name_and_kms_key_id: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        # parse namespace_name and kms_key_id (if provided)
+        namespace_name, kms_key_id = None, None
+        try:
+            if ',' in namespace_name_and_kms_key_id:
+                namespace_name = namespace_name_and_kms_key_id.split(',')[0]
+                kms_key_id = namespace_name_and_kms_key_id.split(',')[1]
+            else:
+                namespace_name = namespace_name_and_kms_key_id
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to CreateRedshiftServerlessNamespace tool")
+
         rs_client = boto3.client('redshift-serverless')
 
         response = None
         try:
-            _ = rs_client.create_namespace(namespaceName=namespace_name)
+            if kms_key_id is None or kms_key_id == "":
+                _ = rs_client.create_namespace(
+                    namespaceName=namespace_name,
+                    adminUserPassword=ADMIN_USER_PASSWORD,
+                    adminUsername=ADMIN_USERNAME,
+                    dbName=DB_NAME,
+                )
+            else:
+                _ = rs_client.create_namespace(
+                    namespaceName=namespace_name,
+                    kmsKeyId=kms_key_id,
+                    adminUserPassword=ADMIN_USER_PASSWORD,
+                    adminUsername=ADMIN_USERNAME,
+                    dbName=DB_NAME,
+                )
             response = f"Successfully created Redshift Serverless namespace {namespace_name}."
         except Exception as e:
             response = e
@@ -176,7 +266,7 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
             workgroup_name = workgroup_and_namespace_names.split(',')[0]
             namespace_name = workgroup_and_namespace_names.split(',')[1]
         except Exception as e:
-            raise Exception("Failed to parse LLM input to AttachIAMPolicy tool")
+            raise Exception("Failed to parse LLM input to CreateRedshiftServerlessWorkgroup tool")
 
         rs_client = boto3.client('redshift-serverless')
 
@@ -191,3 +281,62 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
             response = e
 
         return response
+
+
+class LoadTableFromS3(AWSTool):
+    """Load a table from a parquet file or prefix in S3 into Redshift."""
+
+    name = "Load a table from S3 into Redshift."
+    description = (
+        "This tool loads a database table from a (set of) parquet file(s) in S3 into Redshift."
+        "The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift Serverless workgroup you with to load the data into."
+        "For example, `s3://somebucket/someprefix/file.pq,SomeWorkgroup` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the workgroup `SomeWorkgroup`."
+        "The tool outputs a message indicating the success or failure of the load table operation."
+    )
+
+    def _run(
+        self,
+        input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool."""
+        # parse s3_key_or_prefix and workgroup_name from input
+        try:
+            s3_key_or_prefix = input.split(',')[0]
+            workgroup_name = input.split(',')[1]
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to LoadTableFromS3 tool")
+
+        # create database connection
+        # - hostname format: workgroup-name.account-number.aws-region.redshift-serverless.amazonaws.com
+        conn = redshift_connector.connect(
+            host=f"{workgroup_name}.518251513740.us-east-1.redshift-serverless.amazonaws.com",
+            database=DB_NAME,
+            user=ADMIN_USERNAME,
+            password=ADMIN_USER_PASSWORD,
+        )
+        cursor = conn.cursor()
+
+        # try executing query to load table
+        # TODO: remove dummy values
+        create_table_cmd = """CREATE TABLE mini_table
+        (
+            order_id INTEGER NOT NULL,
+            customer_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            amount INTEGER NOT NULL
+        );
+        """
+        copy_table_cmd = f"""COPY mini_table FROM '{s3_key_or_prefix}' IAM_ROLE 'arn:aws:iam::518251513740:instance-profile/test-rollm-agent-role' FORMAT AS parquet"""
+
+        response = None
+        try:
+            cursor.execute(create_table_cmd)
+            cursor.execute(copy_table_cmd)
+            conn.commit()
+            response = f"Successfully created table mini_table in {workgroup_name}."
+        except Exception as e:
+            response = e
+
+        return response
+        

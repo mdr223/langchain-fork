@@ -5,6 +5,8 @@ from langchain.tools.aws.tool import (
     AttachIAMPolicy,
     CreateRedshiftServerlessNamespace,
     CreateRedshiftServerlessWorkgroup,
+    LoadTableFromS3,
+    CreateS3Bucket,
 )
 
 __all__ = [
@@ -12,4 +14,7 @@ __all__ = [
     "AttachIAMPolicy",
     "CreateRedshiftServerlessNamespace",
     "CreateRedshiftServerlessWorkgroup",
+    "LoadTableFromS3",
+    "CreateS3Bucket",
+    "CreateKMSKey",
 ]
