@@ -10,6 +10,7 @@ from langchain.tools.aws.tool import (
     LoadTableFromS3,
     CreateS3Bucket,
     CreateKMSKey,
+    CreateRedshiftCluster,
 )
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     "LoadTableFromS3",
     "CreateS3Bucket",
     "CreateKMSKey",
+    "CreateRedshiftCluster",
 ]

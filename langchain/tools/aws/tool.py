@@ -232,6 +232,76 @@ class CreateS3Bucket(AWSTool):
         return response
 
 
+class CreateRedshiftCluster(AWSTool):
+    """Create a Redshift Cluster in the user's AWS account."""
+    name = "Create a Redshift Cluster"
+    description = (
+        "This tool creates a Redshift Cluster using the given `cluster_name` in the user's AWS account."
+        "The input to this tool should be a comma separated list of strings of length one or length two."
+        "If the input is of length one, the string represents the name of the cluster the user wishes to create."
+        "If the input is of length two, the first string represents the name of the cluster and the second string represents the node type to be used in creating the cluster."
+        "For example, `SomeCluster` would be the input if you wanted to create the cluster `SomeCluster`."
+        "As another example, `SomeCluster,ds2.xlarge` would be the input if you wanted to create the cluster `SomeCluster` with the node type `ds2.xlarge`."
+        "The tool outputs a message indicating the success or failure of the create cluster operation."
+    )
+
+    def _run(
+        self,
+        cluster_name_and_node_type: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool."""
+        # parse cluster_name and node_type (if provided)
+        cluster_name, node_type = None, None
+        try:
+            if ',' in cluster_name_and_node_type:
+                cluster_name = cluster_name_and_node_type.split(',')[0]
+                node_type = cluster_name_and_node_type.split(',')[1]
+            else:
+                cluster_name = cluster_name_and_node_type
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to CreateRedshiftCluster tool")
+
+        rs_client = boto3.client('redshift')
+
+        response = None
+        try:
+            user_iam_role = get_user_iam_role()
+            if node_type is None or node_type == "":
+                _ = rs_client.create_cluster(
+                    DBName=DB_NAME,
+                    ClusterIdentifier=cluster_name,
+                    ClusterType="multi-node",
+                    NodeType="ds2.xlarge",
+                    MasterUsername=ADMIN_USERNAME,
+                    MasterUserPassword=ADMIN_USER_PASSWORD,
+                    cluster=namespace_name,
+                    adminUserPassword=ADMIN_USER_PASSWORD,
+                    adminUsername=ADMIN_USERNAME,
+                    DefaultIamRoleArn=AGENT_IAM_ROLE,
+                    IamRoles=[AGENT_IAM_ROLE, user_iam_role],
+                )
+            else:
+                _ = rs_client.create_cluster(
+                    DBName=DB_NAME,
+                    ClusterIdentifier=cluster_name,
+                    ClusterType="multi-node",
+                    NodeType=node_type,
+                    MasterUsername=ADMIN_USERNAME,
+                    MasterUserPassword=ADMIN_USER_PASSWORD,
+                    cluster=namespace_name,
+                    adminUserPassword=ADMIN_USER_PASSWORD,
+                    adminUsername=ADMIN_USERNAME,
+                    DefaultIamRoleArn=AGENT_IAM_ROLE,
+                    IamRoles=[AGENT_IAM_ROLE, user_iam_role],
+                )
+            response = f"Successfully created Redshift cluster {cluster_name}."
+        except Exception as e:
+            response = e
+
+        return response
+
+
 class CreateRedshiftServerlessNamespace(AWSTool):
     """Create a namespace for Redshift Serverless in the user's AWS account."""
 
