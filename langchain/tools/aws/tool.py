@@ -18,6 +18,7 @@ import pandas as pd
 # TODO: have AWS account ID read from env. variable
 # TODO: use utility to perform environment + setup check(s)
 # TODO: break into sub folders for subcommands (e.g. "iam/", "redshift/", "redshift-serverless/", etc.)
+AGENT_IAM_ROLE = "arn:aws:iam::518251513740:role/test-rollm-agent-role"
 ASSUME_ROLE_POLICY_DOC = """{
     "Version": "2012-10-17",
     "Statement": [
@@ -266,6 +267,8 @@ class CreateRedshiftServerlessNamespace(AWSTool):
                     adminUserPassword=ADMIN_USER_PASSWORD,
                     adminUsername=ADMIN_USERNAME,
                     dbName=DB_NAME,
+                    defaultIamRoleArn=AGENT_IAM_ROLE,
+                    iamRoles=[AGENT_IAM_ROLE],
                 )
             else:
                 _ = rs_client.create_namespace(
@@ -274,6 +277,8 @@ class CreateRedshiftServerlessNamespace(AWSTool):
                     adminUserPassword=ADMIN_USER_PASSWORD,
                     adminUsername=ADMIN_USERNAME,
                     dbName=DB_NAME,
+                    defaultIamRoleArn=AGENT_IAM_ROLE,
+                    iamRoles=[AGENT_IAM_ROLE],
                 )
             response = f"Successfully created Redshift Serverless namespace {namespace_name}."
         except Exception as e:
@@ -370,8 +375,9 @@ class DeleteRedshiftServerlessWorkgroup(AWSTool):
 
         response = None
         try:
-            res = rs_client.delete_workgroup(workgroupName=workgroup_name)
-            response = f"Successfully deleted Redshift Serverless workgroup {workgroup_name} in namespace {res['namespaceName']}."
+            # TODO: parse the client command output to also state which namespace the workgroup was deleted from
+            _ = rs_client.delete_workgroup(workgroupName=workgroup_name)
+            response = f"Successfully deleted Redshift Serverless workgroup {workgroup_name}."
         except Exception as e:
             response = e
 
@@ -421,7 +427,7 @@ class LoadTableFromS3(AWSTool):
             amount INTEGER NOT NULL
         );
         """
-        copy_table_cmd = f"""COPY mini_table FROM '{s3_key_or_prefix}' IAM_ROLE 'arn:aws:iam::518251513740:role/test-rollm-agent-role' FORMAT AS parquet"""
+        copy_table_cmd = f"""COPY mini_table FROM '{s3_key_or_prefix}' IAM_ROLE '{AGENT_IAM_ROLE}' FORMAT AS parquet"""
 
         response = None
         try:
