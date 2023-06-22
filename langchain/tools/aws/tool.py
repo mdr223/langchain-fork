@@ -456,13 +456,71 @@ class DeleteRedshiftServerlessWorkgroup(AWSTool):
         return response
 
 
-class LoadTableFromS3(AWSTool):
-    """Load a table from a parquet file or prefix in S3 into Redshift."""
+class LoadTableFromS3Cluster(AWSTool):
+    """Load a table from a parquet file or prefix in S3 into a Redshift Cluster."""
 
-    name = "Load a table from S3 into Redshift."
+    name = "Load a table from S3 into a provisioned Redshift cluster."
     description = (
-        "This tool loads a database table from a (set of) parquet file(s) in S3 into Redshift."
-        "The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift Serverless workgroup you with to load the data into."
+        "This tool loads a database table from a (set of) parquet file(s) in S3 into a provisioned Redshift cluster."
+        "The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift cluster you wish to load the data into."
+        "For example, `s3://somebucket/someprefix/file.pq,SomeCluster` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the cluster `SomeCluster`."
+        "The tool outputs a message indicating the success or failure of the load table operation."
+    )
+
+    def _run(
+        self,
+        input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool."""
+        # parse s3_key_or_prefix and cluster_name from input
+        try:
+            s3_key_or_prefix = input.split(',')[0]
+            cluster_name = input.split(',')[1]
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to LoadTableFromS3Cluster tool")
+
+        # create database connection; TODO: fetch the `some-id` part dynamically
+        # - hostname format: cluster-name.some-id.aws-region.redshift.amazonaws.com
+        # - mrusso-cluster.chcgpkxl6sbm.us-east-1.redshift.amazonaws.com:5439/dev
+        conn = redshift_connector.connect(
+            host=f"{cluster_name}.chcgpkxl6sbm.us-east-1.redshift.amazonaws.com",
+            database=DB_NAME,
+            user=ADMIN_USERNAME,
+            password=ADMIN_USER_PASSWORD,
+        )
+        cursor = conn.cursor()
+
+        # try executing query to load table
+        # TODO: remove dummy values
+        create_table_cmd = """CREATE TABLE mini_table (
+            order_id INTEGER NOT NULL,
+            customer_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            amount INTEGER NOT NULL
+        );
+        """
+        copy_table_cmd = f"""COPY mini_table FROM '{s3_key_or_prefix}' IAM_ROLE '{AGENT_IAM_ROLE}' FORMAT AS parquet"""
+
+        response = None
+        try:
+            cursor.execute(create_table_cmd)
+            cursor.execute(copy_table_cmd)
+            conn.commit()
+            response = f"Successfully created table mini_table in {cluster_name}."
+        except Exception as e:
+            response = e
+
+        return response
+
+
+class LoadTableFromS3Serverless(AWSTool):
+    """Load a table from a parquet file or prefix in S3 into Redshift Serverless."""
+
+    name = "Load a table from S3 into a workgroup/database in Redshift Serverless."
+    description = (
+        "This tool loads a database table from a (set of) parquet file(s) in S3 into a workgroup/database in Redshift Serverless."
+        "The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift Serverless workgroup you wish to load the data into."
         "For example, `s3://somebucket/someprefix/file.pq,SomeWorkgroup` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the workgroup `SomeWorkgroup`."
         "The tool outputs a message indicating the success or failure of the load table operation."
     )
@@ -478,7 +536,7 @@ class LoadTableFromS3(AWSTool):
             s3_key_or_prefix = input.split(',')[0]
             workgroup_name = input.split(',')[1]
         except Exception as e:
-            raise Exception("Failed to parse LLM input to LoadTableFromS3 tool")
+            raise Exception("Failed to parse LLM input to LoadTableFromS3Serverless tool")
 
         # create database connection
         # - hostname format: workgroup-name.account-number.aws-region.redshift-serverless.amazonaws.com
@@ -511,4 +569,3 @@ class LoadTableFromS3(AWSTool):
             response = e
 
         return response
-        
