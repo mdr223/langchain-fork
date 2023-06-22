@@ -19,6 +19,7 @@ import pandas as pd
 # TODO: use utility to perform environment + setup check(s)
 # TODO: break into sub folders for subcommands (e.g. "iam/", "redshift/", "redshift-serverless/", etc.)
 AGENT_IAM_ROLE = "arn:aws:iam::518251513740:role/test-rollm-agent-role"
+USER_IAM_ROLE = "arn:aws:iam::518251513740:role/Admin"
 ASSUME_ROLE_POLICY_DOC = """{
     "Version": "2012-10-17",
     "Statement": [
@@ -63,6 +64,11 @@ DEFAULT_BUCKET_POLICY = {
 ADMIN_USER_PASSWORD = "Testing123"
 ADMIN_USERNAME = "agentadmin"
 DB_NAME = "dev"
+
+
+def get_user_iam_role():
+    """TODO replace this with a real function that get's the user's IAM role."""
+    return USER_IAM_ROLE
 
 
 class AWSTool(BaseTool):
@@ -261,6 +267,7 @@ class CreateRedshiftServerlessNamespace(AWSTool):
 
         response = None
         try:
+            user_iam_role = get_user_iam_role()
             if kms_key_id is None or kms_key_id == "":
                 _ = rs_client.create_namespace(
                     namespaceName=namespace_name,
@@ -268,7 +275,7 @@ class CreateRedshiftServerlessNamespace(AWSTool):
                     adminUsername=ADMIN_USERNAME,
                     dbName=DB_NAME,
                     defaultIamRoleArn=AGENT_IAM_ROLE,
-                    iamRoles=[AGENT_IAM_ROLE],
+                    iamRoles=[AGENT_IAM_ROLE, user_iam_role],
                 )
             else:
                 _ = rs_client.create_namespace(
@@ -278,7 +285,7 @@ class CreateRedshiftServerlessNamespace(AWSTool):
                     adminUsername=ADMIN_USERNAME,
                     dbName=DB_NAME,
                     defaultIamRoleArn=AGENT_IAM_ROLE,
-                    iamRoles=[AGENT_IAM_ROLE],
+                    iamRoles=[AGENT_IAM_ROLE, user_iam_role],
                 )
             response = f"Successfully created Redshift Serverless namespace {namespace_name}."
         except Exception as e:
@@ -359,7 +366,7 @@ class DeleteRedshiftServerlessWorkgroup(AWSTool):
 
     name = "Delete a workgroup from Redshift Serverless"
     description = (
-        "This tool deletes a Redshift Serverless workgroup using the given `workgroup_name` in the namespace specified by `namespace_name`."
+        "This tool deletes a Redshift Serverless workgroup using the given `workgroup_name`."
         "The input to this tool should be a string representing the name of the workgroup you wish to delete (i.e. `workgroup_name`)."
         "For example, `SomeWorkgroup` would be the input if you wanted to delete the workgroup `SomeWorkgroup`."
         "The tool outputs a message indicating the success or failure of the delete workgroup operation."
@@ -375,9 +382,9 @@ class DeleteRedshiftServerlessWorkgroup(AWSTool):
 
         response = None
         try:
-            # TODO: parse the client command output to also state which namespace the workgroup was deleted from
-            _ = rs_client.delete_workgroup(workgroupName=workgroup_name)
-            response = f"Successfully deleted Redshift Serverless workgroup {workgroup_name}."
+            # delete the workgroup
+            res = rs_client.delete_workgroup(workgroupName=workgroup_name)
+            response = f"Successfully deleted Redshift Serverless workgroup {workgroup_name} from namespace {res['workgroup']['namespaceName']}."
         except Exception as e:
             response = e
 
