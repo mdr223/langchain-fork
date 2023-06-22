@@ -275,8 +275,6 @@ class CreateRedshiftCluster(AWSTool):
                     NodeType="ds2.xlarge",
                     MasterUsername=ADMIN_USERNAME,
                     MasterUserPassword=ADMIN_USER_PASSWORD,
-                    adminUserPassword=ADMIN_USER_PASSWORD,
-                    adminUsername=ADMIN_USERNAME,
                     DefaultIamRoleArn=AGENT_IAM_ROLE,
                     IamRoles=[AGENT_IAM_ROLE, user_iam_role],
                 )
@@ -288,8 +286,6 @@ class CreateRedshiftCluster(AWSTool):
                     NodeType=node_type,
                     MasterUsername=ADMIN_USERNAME,
                     MasterUserPassword=ADMIN_USER_PASSWORD,
-                    adminUserPassword=ADMIN_USER_PASSWORD,
-                    adminUsername=ADMIN_USERNAME,
                     DefaultIamRoleArn=AGENT_IAM_ROLE,
                     IamRoles=[AGENT_IAM_ROLE, user_iam_role],
                 )
