@@ -115,7 +115,6 @@ def create_redshift_security_group(port=5439):
                 "FromPort": port,
                 "ToPort": port,
                 "IpProtocol": "-1",
-                "IpRanges": [{"CidrIp": "0.0.0.0/0"}],
             },
         ]
     )
