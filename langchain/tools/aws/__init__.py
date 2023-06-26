@@ -3,27 +3,29 @@
 from langchain.tools.aws.tool import (
     CreateIAMRole,
     AttachIAMPolicy,
+    CreateRedshiftCluster,
     CreateRedshiftServerlessNamespace,
     CreateRedshiftServerlessWorkgroup,
+    DeleteRedshiftCluster,
     DeleteRedshiftServerlessNamespace,
     DeleteRedshiftServerlessWorkgroup,
     LoadTableFromS3Serverless,
     LoadTableFromS3Cluster,
     CreateS3Bucket,
     CreateKMSKey,
-    CreateRedshiftCluster,
 )
 
 __all__ = [
     "CreateIAMRole",
     "AttachIAMPolicy",
+    "CreateRedshiftCluster",
     "CreateRedshiftServerlessNamespace",
     "CreateRedshiftServerlessWorkgroup",
+    "DeleteRedshiftCluster",
     "DeleteRedshiftServerlessNamespace",
     "DeleteRedshiftServerlessWorkgroup",
     "LoadTableFromS3Serverless",
     "LoadTableFromS3Cluster",
     "CreateS3Bucket",
     "CreateKMSKey",
-    "CreateRedshiftCluster",
 ]
