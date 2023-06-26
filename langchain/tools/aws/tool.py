@@ -703,7 +703,7 @@ class SelectQueryDataFromTableServerless(AWSTool):
         # parse workgroup_name, table_name, and columns from input
         workgroup_name, table_name, columns = None, None, None
         try:
-            args = input.split(',')[0]
+            args = input.split(',')
             workgroup_name = args[0]
             table_name = args[1]
             columns = args[2:]
