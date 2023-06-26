@@ -473,6 +473,36 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
         return response
 
 
+class DeleteRedshiftCluster(AWSTool):
+    """Delete a cluster from Redshift in the user's AWS account."""
+
+    name = "Delete a cluster from Redshift"
+    description = (
+        "This tool deletes a Redshift cluster using the given `cluster_name`."
+        "The input to this tool should be a string representing the name of the cluster you wish to delete (i.e. `cluster_name`)."
+        "For example, `SomeCluster` would be the input if you wanted to delete the cluster `SomeCluster`."
+        "The tool outputs a message indicating the success or failure of the delete cluster operation."
+    )
+
+    def _run(
+        self,
+        cluster_name: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool."""
+        rs_client = boto3.client('redshift')
+
+        response = None
+        try:
+            # delete the cluster
+            _ = rs_client.delete_cluster(ClusterIdentifier=cluster_name)
+            response = f"Successfully deleted Redshift cluster {cluster_name}."
+        except Exception as e:
+            response = e
+
+        return response
+
+
 class DeleteRedshiftServerlessNamespace(AWSTool):
     """Delete a namespace from Redshift Serverless in the user's AWS account."""
 
