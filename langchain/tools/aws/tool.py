@@ -99,10 +99,10 @@ def create_redshift_security_group(port=5439):
         GroupId=sg_id,
         IpPermissions=[
             {
-                FromPort=port,
-                ToPort=port,
-                IpProtocol="tcp",
-                IpRanges=[{"CidrIp": "0.0.0.0/0"}],
+                "FromPort"=port,
+                "ToPort"=port,
+                "IpProtocol"="tcp",
+                "IpRanges"=[{"CidrIp": "0.0.0.0/0"}],
             },
         ]
     )
@@ -112,10 +112,10 @@ def create_redshift_security_group(port=5439):
         GroupId=sg_id,
         IpPermissions=[
             {
-                FromPort=port,
-                ToPort=port,
-                IpProtocol="-1",
-                IpRanges=[{"CidrIp": "0.0.0.0/0"}],
+                "FromPort"=port,
+                "ToPort"=port,
+                "IpProtocol"="-1",
+                "IpRanges"=[{"CidrIp": "0.0.0.0/0"}],
             },
         ]
     )
