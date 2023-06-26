@@ -11,6 +11,7 @@ from langchain.tools.base import BaseTool
 import boto3
 import json
 import redshift_connector
+import secrets
 
 import pandas as pd
 
@@ -64,11 +65,62 @@ DEFAULT_BUCKET_POLICY = {
 ADMIN_USER_PASSWORD = "Testing123"
 ADMIN_USERNAME = "agentadmin"
 DB_NAME = "dev"
-
+VPC_ID = "vpc-0a8922b2e49b2c963"
 
 def get_user_iam_role():
     """TODO replace this with a real function that get's the user's IAM role."""
     return USER_IAM_ROLE
+
+def get_vpc_id():
+    """TODO replace this with a real function that get's the VPC ID that the agent's EC2 instance is in."""
+    return VPC_ID
+
+def create_redshift_security_group(port=5439):
+    """Create a security group that allows Redshift traffic on the specified port."""
+    ec2_client = boto3.client('ec2')
+
+    # inner function to generate unique security group name(s)
+    def create_sg_name():
+        hex_string = secrets.token_hex(4)
+        return f"redshift-agent-security-group-{hex_string}"
+
+    # generate unique name and create security group; command returns security group ID
+    sg_name = create_sg_name()
+    vpc_id = get_vpc_id()
+    response = ec2_client.create_security_group(
+        Description="Security group allowing redshift connection from LLM agent.",
+        GroupName=sg_name,
+        VpcId=vpc_id,
+    )
+    sg_id = response['GroupId']
+
+    # update security group to allow Redshift ingress
+    ec2_client.authorize_security_group_ingress(
+        GroupId=sg_id,
+        IpPermissions=[
+            {
+                FromPort=port,
+                ToPort=port,
+                IpProtocol="tcp",
+                IpRanges=[{"CidrIp": "0.0.0.0/0"}],
+            },
+        ]
+    )
+
+    # update security group to allow all egress
+    ec2_client.authorize_security_group_egress(
+        GroupId=sg_id,
+        IpPermissions=[
+            {
+                FromPort=port,
+                ToPort=port,
+                IpProtocol="-1",
+                IpRanges=[{"CidrIp": "0.0.0.0/0"}],
+            },
+        ]
+    )
+
+    return sg_id
 
 
 class AWSTool(BaseTool):
@@ -237,14 +289,16 @@ class CreateRedshiftCluster(AWSTool):
     name = "Create a Redshift Cluster"
     description = (
         "This tool creates a Redshift Cluster using the given `cluster_name` in the user's AWS account."
-        "The input to this tool should be a comma separated list of strings of length one, two, or three."
+        "The input to this tool should be a comma separated list of strings of length one, two, three, or four."
         "If the input is of length one, the string represents the name of the cluster the user wishes to create."
         #"If the input is of length two, the first string represents the name of the cluster and the second string represents the node type to be used in creating the cluster."
         "If the input is of length two, the second string represents the node type to be used in creating the cluster."
         "If the input is of length three, the third string represents the number of nodes to be used in creating the cluster."
+        "If the input is of length four, the fourth string represents the security group ID to be used in creating the cluster."
         "For example, `SomeCluster` would be the input if you wanted to create the cluster `SomeCluster`."
         "As another example, `SomeCluster,ds2.xlarge` would be the input if you wanted to create a single-node cluster `SomeCluster` with the node type `ds2.xlarge`."
         "As another example, `SomeCluster,ds2.xlarge,4` would be the input if you wanted to create a multi-node cluster `SomeCluster` with four nodes of node type `ds2.xlarge`."
+        "As another example, `SomeCluster,ds2.xlarge,4,sg-0a1b2c3d4e5f67890` would be the input if you wanted to create a multi-node cluster `SomeCluster` with four nodes of node type `ds2.xlarge` using the security group `sg-0a1b2c3d4e5f67890`."
         "The tool outputs a message indicating the success or failure of the create cluster operation."
     )
 
@@ -255,22 +309,31 @@ class CreateRedshiftCluster(AWSTool):
     ) -> str:
         """Use the tool."""
         # parse cluster_name and node_type (if provided)
-        cluster_name, node_type, num_nodes = None, None, None
+        cluster_name, node_type, num_nodes, security_group = None, None, None, None
         try:
             if ',' in cluster_name_and_nodes:
                 args = cluster_name_and_nodes.split(',')
                 if len(args) == 2:
-                    cluster_name = cluster_name_and_nodes.split(',')[0]
-                    node_type = cluster_name_and_nodes.split(',')[1]
+                    cluster_name = args[0]
+                    node_type = args[1]
                     num_nodes = 1
-                if len(args) == 3:
-                    cluster_name = cluster_name_and_nodes.split(',')[0]
-                    node_type = cluster_name_and_nodes.split(',')[1]
-                    num_nodes = int(cluster_name_and_nodes.split(',')[2])
+                    security_group = create_redshift_security_group()
+                elif len(args) == 3:
+                    cluster_name = args[0]
+                    node_type = args[1]
+                    num_nodes = int(args[2])
+                    security_group = create_redshift_security_group()
+                elif len(args) == 4:
+                    cluster_name = args[0]
+                    node_type = args[1]
+                    num_nodes = int(args[2])
+                    security_group = args[3]
             else:
                 cluster_name = cluster_name_and_nodes
                 node_type = "ds2.xlarge"
                 num_nodes = 1
+                security_group = create_redshift_security_group()
+
         except Exception as e:
             raise Exception("Failed to parse LLM input to CreateRedshiftCluster tool")
 
@@ -289,6 +352,7 @@ class CreateRedshiftCluster(AWSTool):
                 MasterUserPassword=ADMIN_USER_PASSWORD,
                 DefaultIamRoleArn=AGENT_IAM_ROLE,
                 IamRoles=[AGENT_IAM_ROLE, user_iam_role],
+                VpcSecurityGroupIds=[security_group],
             )
             response = f"Successfully created Redshift cluster {cluster_name}."
         except Exception as e:
@@ -364,8 +428,11 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
     name = "Create a workgroup for Redshift Serverless"
     description = (
         "This tool creates a Redshift Serverless workgroup using the given `workgroup_name` in the namespace specified by `namespace_name`."
-        "The input to this tool should be a comma separated list of strings of length two, representing the name of the workgroup you wish to create (i.e. `workgroup_name`) and the namespace it should be created in (i.e. `namespace_name`)."
+        "The input to this tool should be a comma separated list of strings of length two or three."
+        "If the input is of length two, the first string represents the name of the workgroup you wish to create (i.e. `workgroup_name`) and the second string represents namespace it should be created in (i.e. `namespace_name`)."
+        "If the input is of length three, the third string represents the security group ID to be used in creating the workgroup."
         "For example, `SomeWorkgroup,SomeNamespace` would be the input if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace`."
+        "As another example, `SomeWorkgroup,SomeNamespace,sg-0a1b2c3d4e5f67890` would be the input if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace` using the security group `sg-0a1b2c3d4e5f67890`."
         "The tool outputs a message indicating the success or failure of the create workgroup operation."
     )
 
@@ -376,9 +443,17 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
     ) -> str:
         """Use the tool."""
         # parse workgroup_name and namespace_name
+        workgroup_name, namespace_name, security_group = None, None, None
         try:
-            workgroup_name = workgroup_and_namespace_names.split(',')[0]
-            namespace_name = workgroup_and_namespace_names.split(',')[1]
+            args = workgroup_and_namespace_names.split(',')
+            if len(args) == 2:
+                workgroup_name = args[0]
+                namespace_name = args[1]
+                security_group = create_redshift_security_group()
+            elif len(args) == 3:
+                workgroup_name = args[0]
+                namespace_name = args[1]
+                security_group = args[2]
         except Exception as e:
             raise Exception("Failed to parse LLM input to CreateRedshiftServerlessWorkgroup tool")
 
@@ -389,6 +464,7 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
             _ = rs_client.create_workgroup(
                 workgroupName=workgroup_name,
                 namespaceName=namespace_name,
+                securityGroupIds=[security_group],
             )
             response = f"Successfully created Redshift Serverless workgroup {workgroup_name} in namespace {namespace_name}."
         except Exception as e:
