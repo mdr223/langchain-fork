@@ -11,6 +11,7 @@ from langchain.tools.aws.tool import (
     DeleteRedshiftServerlessWorkgroup,
     LoadTableFromS3Serverless,
     LoadTableFromS3Cluster,
+    SelectQueryDataFromTableServerless,
     CreateS3Bucket,
     CreateKMSKey,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "DeleteRedshiftServerlessWorkgroup",
     "LoadTableFromS3Serverless",
     "LoadTableFromS3Cluster",
+    "SelectQueryDataFromTableServerless",
     "CreateS3Bucket",
     "CreateKMSKey",
 ]

@@ -66,6 +66,7 @@ ADMIN_USER_PASSWORD = "Testing123"
 ADMIN_USERNAME = "agentadmin"
 DB_NAME = "dev"
 VPC_ID = "vpc-0a8922b2e49b2c963"
+MAX_RESULTS = 10
 
 def get_user_iam_role():
     """TODO replace this with a real function that get's the user's IAM role."""
@@ -673,6 +674,62 @@ class LoadTableFromS3Serverless(AWSTool):
             cursor.execute(copy_table_cmd)
             conn.commit()
             response = f"Successfully created table mini_table in {workgroup_name}."
+        except Exception as e:
+            response = e
+
+        return response
+
+
+class SelectQueryDataFromTableServerless(AWSTool):
+    """Perform a select query on a specified table in Redshift."""
+
+    name = "Run a select query on a table in Redshift Serverless."
+    description = (
+        "This tool runs a select query on a given table in Redshift Serverless."
+        "The input to this tool should be a comma separated list of strings."
+        "The first string represents the name of the workgroup the table lives in."
+        "The second string represents the name of the table to query."
+        "All subsequent strings represent the names of columns to query from the table."
+        "For example, `SomeWorkgroup,SomeTable,ColumnA,ColumnB` would be the input if you wanted to query the columns `ColumnA` and `ColumnB` from the table `SomeTable` in the workgroup `SomeWorkgroup`."
+        "The tool outputs a message indicating the success or failure of the query operation."
+    )
+
+    def _run(
+        self,
+        input: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool."""
+        # parse workgroup_name, table_name, and columns from input
+        workgroup_name, table_name, columns = None, None, None
+        try:
+            args = input.split(',')[0]
+            workgroup_name = args[0]
+            table_name = args[1]
+            columns = args[2:]
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to SelectQueryDataFromTable tool")
+
+        # create database connection
+        # - hostname format: workgroup-name.account-number.aws-region.redshift-serverless.amazonaws.com
+        conn = redshift_connector.connect(
+            host=f"{workgroup_name}.518251513740.us-east-1.redshift-serverless.amazonaws.com",
+            database=DB_NAME,
+            user=ADMIN_USERNAME,
+            password=ADMIN_USER_PASSWORD,
+        )
+        cursor = conn.cursor()
+
+        # try executing select query on table
+        column_str = ",".join(columns)
+        select_cmd = f"""SELECT {column_str} FROM {table_name};"""
+
+        response = None
+        try:
+            cursor.execute(select_cmd)
+            result = cursor.fetchall()
+            result_df = pd.DataFrame(result, columns=columns)
+            response = f"{result_df.head(MAX_RESULTS)}"
         except Exception as e:
             response = e
 
