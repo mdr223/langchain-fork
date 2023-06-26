@@ -495,7 +495,10 @@ class DeleteRedshiftCluster(AWSTool):
         response = None
         try:
             # delete the cluster
-            _ = rs_client.delete_cluster(ClusterIdentifier=cluster_name)
+            _ = rs_client.delete_cluster(
+                ClusterIdentifier=cluster_name,
+                SkipFinalClusterSnapshot=True,
+            )
             response = f"Successfully deleted Redshift cluster {cluster_name}."
         except Exception as e:
             response = e
