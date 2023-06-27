@@ -14,6 +14,7 @@ from langchain.tools.aws.tool import (
     SelectQueryDataFromTableServerless,
     CreateS3Bucket,
     CreateKMSKey,
+    ToolSearch,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "SelectQueryDataFromTableServerless",
     "CreateS3Bucket",
     "CreateKMSKey",
+    "ToolSearch",
 ]
