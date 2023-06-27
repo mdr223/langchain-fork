@@ -80,6 +80,7 @@ class RedshiftConversationalAgent(Agent):
         # tool_strings = "\n".join(
         #     [f"> {tool.name}: {tool.description}" for tool in tools]
         # )
+        print("HELLO WORLD")
         tool_strings = "\n".join(
             [
                 f"> {tool.name}: {tool.description}"
