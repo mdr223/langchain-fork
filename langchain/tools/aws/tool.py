@@ -1,6 +1,6 @@
 """Tools for calling various AWS CLI commands."""
 from pydantic.fields import Field
-from typing import Optional
+from typing import Dict, Optional
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -121,6 +121,47 @@ def create_redshift_security_group(port=5439):
     )
 
     return sg_id
+
+
+class ToolSearch(BaseTool):
+    """Tool that's used to look up the descriptions of other tools."""
+    name = "ToolSearch"
+    description = (
+        "This tool looks up and returns the descriptions of other tools provided to the LLM agent. This can help the agent decide which tool to use to respond to a user's input, as well as how to use that tool."
+        "The input to this tool should be a comma separated list of one or more strings."
+        "Each string is the name of another tool provided to the LLM agent, which the agent would like to lookup the description for."
+        "For example, `SomeToolA,SomeToolB` would be the input if you wanted to look up the descriptions of tools `SomeToolA` and `SomeToolB` and learn how to properly use them."
+        "This tool's output contains the descriptions of all the tools that are provided as input."
+    )
+    tool_descriptions: Dict[str, str] = {}
+
+    def _run(
+        self,
+        tool_names: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool."""
+        tool_description_str = "Tool decriptions:\n"
+        try:
+            tool_name_list = [tool_name.strip() for tool_name in tool_names.split(",")]
+            for tool_name in tool_name_list:
+                if tool_name in self.tool_descriptions:
+                    tool_description_str += f"> {tool_name}: {self.tool_descriptions[tool_name]}\n"
+                else:
+                    tool_description_str += f"> {tool_name}: no tool with this name was provided to ToolSearch, please double-check spelling and capitalization.\n"
+
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to ToolSearch tool")
+
+        return tool_description_str
+
+    async def _arun(
+        self,
+        tools: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool asynchronously."""
+        raise NotImplementedError("Tool does not support async")
 
 
 class AWSTool(BaseTool):
@@ -729,7 +770,7 @@ class SelectQueryDataFromTableServerless(AWSTool):
             cursor.execute(select_cmd)
             result = cursor.fetchall()
             result_df = pd.DataFrame(result, columns=columns)
-            response = f"{result_df.head(MAX_RESULTS)}"
+            response = f"\n{result_df.head(MAX_RESULTS)}"
         except Exception as e:
             response = e
 

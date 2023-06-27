@@ -17,6 +17,7 @@ from langchain.prompts import PromptTemplate
 from langchain.tools.base import BaseTool
 
 
+# TODO: change Agent --> ToolSearchThenActionAgent
 class RedshiftConversationalAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
@@ -33,6 +34,11 @@ class RedshiftConversationalAgent(Agent):
     def _agent_type(self) -> str:
         """Return Identifier of agent type."""
         return AgentType.REDSHIFT_CONVERSATIONAL_REACT_DESCRIPTION
+
+    # @property
+    # def potential_action_prefix(self) -> str:
+    #     """Prefix to append the potential actions with."""
+    #     return "Potential Actions: "
 
     @property
     def observation_prefix(self) -> str:
@@ -53,6 +59,7 @@ class RedshiftConversationalAgent(Agent):
         format_instructions: str = FORMAT_INSTRUCTIONS,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
+        # max_tool_retries: int = 5,
         input_variables: Optional[List[str]] = None,
     ) -> PromptTemplate:
         """Create prompt in the style of the zero shot agent.
@@ -64,19 +71,32 @@ class RedshiftConversationalAgent(Agent):
             suffix: String to put after the list of tools.
             ai_prefix: String to use before AI output.
             human_prefix: String to use before human output.
+            max_tool_retries: Instruction to LLM for maximum number of times to retry tool search.
             input_variables: List of input variables the final prompt will expect.
 
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
         """
+        # tool_strings = "\n".join(
+        #     [f"> {tool.name}: {tool.description}" for tool in tools]
+        # )
         tool_strings = "\n".join(
-            [f"> {tool.name}: {tool.description}" for tool in tools]
+            [
+                f"> {tool.name}: {tool.description}"
+                if tool.name == "ToolSearch"
+                else f"> {tool.name}: use ToolSearch to lookup this definition."
+                for tool in tools
+            ]
         )
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(
-            tool_names=tool_names, ai_prefix=ai_prefix, human_prefix=human_prefix
+            tool_names=tool_names,
+            ai_prefix=ai_prefix,
+            human_prefix=human_prefix,
+            # max_tool_retries=max_tool_retries,
         )
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
+        # template = "\n\n".join([prefix, format_instructions, suffix])
         if input_variables is None:
             input_variables = ["input", "chat_history", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)
@@ -98,6 +118,7 @@ class RedshiftConversationalAgent(Agent):
         format_instructions: str = FORMAT_INSTRUCTIONS,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
+        # max_tool_retries: int = 5,
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Agent:
@@ -110,6 +131,7 @@ class RedshiftConversationalAgent(Agent):
             prefix=prefix,
             suffix=suffix,
             format_instructions=format_instructions,
+            # max_tool_retries=max_tool_retries,
             input_variables=input_variables,
         )
         llm_chain = LLMChain(

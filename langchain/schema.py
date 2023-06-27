@@ -65,6 +65,14 @@ class AgentFinish(NamedTuple):
     log: str
 
 
+@dataclass
+class AgentToolSearch:
+    """Agent's actions to look up."""
+
+    tools: List[str]
+    log: str
+
+
 class Generation(Serializable):
     """Output of a single generation."""
 
