@@ -16,7 +16,7 @@ AGENT_TO_CLASS: Dict[AgentType, Type[BaseSingleActionAgent]] = {
     AgentType.ZERO_SHOT_REACT_DESCRIPTION: ZeroShotAgent,
     AgentType.REACT_DOCSTORE: ReActDocstoreAgent,
     AgentType.SELF_ASK_WITH_SEARCH: SelfAskWithSearchAgent,
-    AgentType.CONVERSATIONAL_REACT_DESCRIPTION: ConversationalAgent,
+    AgentType.CONVERSATIONAL_REACT_DESCRIPTION: RedshiftConversationalAgent,
     AgentType.REDSHIFT_CONVERSATIONAL_REACT_DESCRIPTION: ConversationalAgent,
     AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION: ChatAgent,
     AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION: ConversationalChatAgent,
