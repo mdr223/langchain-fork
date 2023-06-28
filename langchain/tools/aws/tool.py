@@ -147,7 +147,7 @@ class ToolSearch(BaseTool):
         """Use the tool."""
         tool_description_str = "\n"
         try:
-            tool_name_list = [tool_name.strip() for tool_name in tool_names.split(",")]
+            tool_name_list = [tool_name.strip().strip(" ").strip('"') for tool_name in tool_names.split(",")]
             for tool_name in tool_name_list:
                 if tool_name in self.tool_descriptions:
                     tool_description_str += f"> {tool_name}: {self.tool_descriptions[tool_name]}\n"
