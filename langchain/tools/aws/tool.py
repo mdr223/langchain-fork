@@ -401,7 +401,7 @@ class CreateS3Bucket(AWSTool):
         create_bucket_kwargs = None
         try:
             create_bucket_kwargs = json.loads(create_bucket_json.strip().strip('`'))
-        Exception as e:
+        except Exception as e:
             raise Exception("Failed to parse LLM input to CreateS3Bucket tool")
 
         s3_client = boto3.client('s3')
