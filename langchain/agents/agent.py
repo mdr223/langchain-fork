@@ -598,6 +598,48 @@ class Agent(BaseSingleActionAgent):
         }
 
 
+class ToolSearchThenActionAgent(Agent):
+    """Class responsible for calling the language model and deciding the action.
+
+    This is driven by an LLMChain. The prompt in the LLMChain MUST include
+    a variable called "agent_scratchpad" where the agent can put its
+    intermediary work.
+    """
+
+    @property
+    def _stop(self) -> List[str]:
+        return [
+            f"\n{self.observation_prefix.rstrip()}",
+            f"\n\t{self.observation_prefix.rstrip()}",
+            f"\n{self.tools_prefix.rstrip()}",
+            f"\n\t{self.tools_prefix.rstrip()}",
+        ]
+
+    def _construct_scratchpad(
+        self, intermediate_steps: List[Tuple[AgentAction, str]],
+    ) -> Union[str, List[BaseMessage]]:
+        """Construct the scratchpad that lets the agent continue its thought process."""
+        thoughts = ""
+        for action, observation in intermediate_steps:
+            obs_prefix = self.tools_prefix if action.tool == "ToolSearch" else self.observation_prefix
+            thoughts += action.log
+            thoughts += f"\n{obs_prefix}{observation}\n{self.llm_prefix}"
+
+        return thoughts
+
+    @property
+    @abstractmethod
+    def tools_prefix(self) -> str:
+        """Prefix to prepend the tool descriptions with."""
+
+    def tool_run_logging_kwargs(self) -> Dict:
+        return {
+            "llm_prefix": self.llm_prefix,
+            "observation_prefix": self.observation_prefix,
+            "tools_prefix": self.tools_prefix,
+        }
+
+
 class ExceptionTool(BaseTool):
     name = "_Exception"
     description = "Exception tool"

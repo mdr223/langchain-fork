@@ -135,13 +135,17 @@ class ToolSearch(BaseTool):
     )
     tool_descriptions: Dict[str, str] = {}
 
+    @property
+    def short_description(self) -> str:
+        return self.description
+
     def _run(
         self,
         tool_names: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        tool_description_str = "Tool decriptions:\n"
+        tool_description_str = "\n"
         try:
             tool_name_list = [tool_name.strip() for tool_name in tool_names.split(",")]
             for tool_name in tool_name_list:
@@ -197,6 +201,10 @@ class CreateIAMRole(AWSTool):
         "The tool outputs a message indicating the success or failure of the create role operation."
     )
 
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
+
     def _run(
         self,
         role_name: str,
@@ -230,6 +238,10 @@ class AttachIAMPolicy(AWSTool):
         "For example, `SomePolicy,SomeRole` would be the input if you wanted to attach the policy `SomePolicy` to the role `SomeRole`."
         "The tool outputs a message indicating the success or failure of the attach policy operation."
     )
+
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
 
     def _run(
         self,
@@ -270,6 +282,10 @@ class CreateKMSKey(AWSTool):
         "The tool outputs the `KeyId` of the key that it created."
     )
 
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
+
     def _run(
         self,
         input: str,
@@ -299,6 +315,10 @@ class CreateS3Bucket(AWSTool):
         "The tool outputs a message indicating the success or failure of the create S3 bucket operation."
     )
 
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
+
     def _run(
         self,
         bucket_name: str,
@@ -326,8 +346,8 @@ class CreateS3Bucket(AWSTool):
 
 
 class CreateRedshiftCluster(AWSTool):
-    """Create a Redshift Cluster in the user's AWS account."""
-    name = "Create a Redshift Cluster"
+    """Create a Redshift cluster in the user's AWS account."""
+    name = "Create Redshift cluster"
     description = (
         "This tool creates a Redshift Cluster using the given `cluster_name` in the user's AWS account."
         "The input to this tool should be a comma separated list of strings of length one, two, three, or four."
@@ -342,6 +362,10 @@ class CreateRedshiftCluster(AWSTool):
         "As another example, `SomeCluster,ds2.xlarge,4,sg-0a1b2c3d4e5f67890` would be the input if you wanted to create a multi-node cluster `SomeCluster` with four nodes of node type `ds2.xlarge` using the security group `sg-0a1b2c3d4e5f67890`."
         "The tool outputs a message indicating the success or failure of the create cluster operation."
     )
+
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
 
     def _run(
         self,
@@ -405,7 +429,7 @@ class CreateRedshiftCluster(AWSTool):
 class CreateRedshiftServerlessNamespace(AWSTool):
     """Create a namespace for Redshift Serverless in the user's AWS account."""
 
-    name = "Create a namespace for Redshift Serverless"
+    name = "Create Redshift Serverless namespace"
     description = (
         "This tool creates a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account."
         "The input to this tool should be a comma separated list of strings of length one or length two."
@@ -415,6 +439,10 @@ class CreateRedshiftServerlessNamespace(AWSTool):
         "As another example, `SomeNamespace,SomeKeyId` would be the input if you wanted to create the namespace `SomeNamespace` with the KMS key with KeyId `SomeKeyId`."
         "The tool outputs a message indicating the success or failure of the create namespace operation."
     )
+
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
 
     def _run(
         self,
@@ -463,10 +491,11 @@ class CreateRedshiftServerlessNamespace(AWSTool):
 
         return response
 
+
 class CreateRedshiftServerlessWorkgroup(AWSTool):
     """Create a workgroup for Redshift Serverless in the user's AWS account."""
 
-    name = "Create a workgroup for Redshift Serverless"
+    name = "Create Redshift Serverless workgroup"
     description = (
         "This tool creates a Redshift Serverless workgroup using the given `workgroup_name` in the namespace specified by `namespace_name`."
         "The input to this tool should be a comma separated list of strings of length two or three."
@@ -476,6 +505,10 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
         "As another example, `SomeWorkgroup,SomeNamespace,sg-0a1b2c3d4e5f67890` would be the input if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace` using the security group `sg-0a1b2c3d4e5f67890`."
         "The tool outputs a message indicating the success or failure of the create workgroup operation."
     )
+
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
 
     def _run(
         self,
@@ -517,13 +550,17 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
 class DeleteRedshiftCluster(AWSTool):
     """Delete a cluster from Redshift in the user's AWS account."""
 
-    name = "Delete a cluster from Redshift"
+    name = "Delete Redshift cluster"
     description = (
         "This tool deletes a Redshift cluster using the given `cluster_name`."
         "The input to this tool should be a string representing the name of the cluster you wish to delete (i.e. `cluster_name`)."
         "For example, `SomeCluster` would be the input if you wanted to delete the cluster `SomeCluster`."
         "The tool outputs a message indicating the success or failure of the delete cluster operation."
     )
+
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
 
     def _run(
         self,
@@ -550,13 +587,17 @@ class DeleteRedshiftCluster(AWSTool):
 class DeleteRedshiftServerlessNamespace(AWSTool):
     """Delete a namespace from Redshift Serverless in the user's AWS account."""
 
-    name = "Delete a namespace from Redshift Serverless"
+    name = "Delete Redshift Serverless namespace"
     description = (
         "This tool deletes a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account."
         "The input to this tool should be a string representing the name of the namespace the user wishes to delete."
         "For example, `SomeNamespace` would be the input if you wanted to delete the namespace `SomeNamespace`."
         "The tool outputs a message indicating the success or failure of the delete namespace operation."
     )
+
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
 
     def _run(
         self,
@@ -579,13 +620,17 @@ class DeleteRedshiftServerlessNamespace(AWSTool):
 class DeleteRedshiftServerlessWorkgroup(AWSTool):
     """Delete a workgroup from Redshift Serverless in the user's AWS account."""
 
-    name = "Delete a workgroup from Redshift Serverless"
+    name = "Delete Redshift Serverless workgroup"
     description = (
         "This tool deletes a Redshift Serverless workgroup using the given `workgroup_name`."
         "The input to this tool should be a string representing the name of the workgroup you wish to delete (i.e. `workgroup_name`)."
         "For example, `SomeWorkgroup` would be the input if you wanted to delete the workgroup `SomeWorkgroup`."
         "The tool outputs a message indicating the success or failure of the delete workgroup operation."
     )
+
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
 
     def _run(
         self,
@@ -609,13 +654,17 @@ class DeleteRedshiftServerlessWorkgroup(AWSTool):
 class LoadTableFromS3Cluster(AWSTool):
     """Load a table from a parquet file or prefix in S3 into a Redshift Cluster."""
 
-    name = "Load a table from S3 into a provisioned Redshift cluster."
+    name = "Load S3 table into Redshift cluster."
     description = (
         "This tool loads a database table from a (set of) parquet file(s) in S3 into a provisioned Redshift cluster."
         "The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift cluster you wish to load the data into."
         "For example, `s3://somebucket/someprefix/file.pq,SomeCluster` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the cluster `SomeCluster`."
         "The tool outputs a message indicating the success or failure of the load table operation."
     )
+
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
 
     def _run(
         self,
@@ -667,13 +716,17 @@ class LoadTableFromS3Cluster(AWSTool):
 class LoadTableFromS3Serverless(AWSTool):
     """Load a table from a parquet file or prefix in S3 into Redshift Serverless."""
 
-    name = "Load a table from S3 into a workgroup/database in Redshift Serverless."
+    name = "Load S3 table into Redshift Serverless workgroup"
     description = (
         "This tool loads a database table from a (set of) parquet file(s) in S3 into a workgroup/database in Redshift Serverless."
         "The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift Serverless workgroup you wish to load the data into."
         "For example, `s3://somebucket/someprefix/file.pq,SomeWorkgroup` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the workgroup `SomeWorkgroup`."
         "The tool outputs a message indicating the success or failure of the load table operation."
     )
+
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
 
     def _run(
         self,
@@ -724,7 +777,7 @@ class LoadTableFromS3Serverless(AWSTool):
 class SelectQueryDataFromTableServerless(AWSTool):
     """Perform a select query on a specified table in Redshift."""
 
-    name = "Run a select query on a table in Redshift Serverless."
+    name = "Run select query on Redshift Serverless table"
     description = (
         "This tool runs a select query on a given table in Redshift Serverless."
         "The input to this tool should be a comma separated list of strings."
@@ -734,6 +787,10 @@ class SelectQueryDataFromTableServerless(AWSTool):
         "For example, `SomeWorkgroup,SomeTable,ColumnA,ColumnB` would be the input if you wanted to query the columns `ColumnA` and `ColumnB` from the table `SomeTable` in the workgroup `SomeWorkgroup`."
         "The tool outputs a message indicating the success or failure of the query operation."
     )
+
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
 
     def _run(
         self,
