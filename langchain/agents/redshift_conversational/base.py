@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Sequence
 
 from pydantic import Field
 
-from langchain.agents.agent import Agent, AgentOutputParser
+from langchain.agents.agent import Agent, AgentOutputParser, ToolSearchThenActionAgent
 from langchain.agents.agent_types import AgentType
 from langchain.agents.redshift_conversational.output_parser import RedshiftConvoOutputParser
 from langchain.agents.redshift_conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
