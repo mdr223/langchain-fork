@@ -308,122 +308,123 @@ class CreateS3Bucket(AWSTool):
     """Create S3 Bucket in the user's AWS account."""
 
     name = "Create S3 Bucket"
-    # description = (
-    #     "This tool creates an S3 bucket with the given bucket name."
-    #     " The input to this tool should be the name of the S3 bucket you want to create."
-    #     " For example, `MyBucket` would be the input if you wanted to create the S3 bucket `MyBucket`."
-    #     " The tool outputs a message indicating the success or failure of the create S3 bucket operation."
-    # )
-    description = """This tool creates an S3 bucket with the given bucket name.
+    description = (
+        "This tool creates an S3 bucket with the given bucket name."
+        " The input to this tool should be the name of the S3 bucket you want to create."
+        " For example, `MyBucket` would be the input if you wanted to create the S3 bucket `MyBucket`."
+        " The tool outputs a message indicating the success or failure of the create S3 bucket operation."
+    )
+    # description = """This tool creates an S3 bucket with the given bucket name.
 
-    The input to this tool should be a JSON dictionary object with the following format:
-    ```
-    {
-        "Bucket": "`bucket_name`",
-        "ACL": "private"|"public-read"|"public-read-write"|"authenticated-read",
-        "CreateBucketConfiguration": {
-            "LocationConstraint": "af-south-1"|"ap-east-1"|"ap-northeast-1"|"ap-northeast-2"|"ap-northeast-3"|"ap-south-1"|"ap-southeast-1"|"ap-southeast-2"|"ap-southeast-3"|"ca-central-1"|"cn-north-1"|"cn-northwest-1"|"EU"|"eu-central-1"|"eu-north-1"|"eu-south-1"|"eu-west-1"|"eu-west-2"|"eu-west-3"|"me-south-1"|"sa-east-1"|"us-east-2"|"us-gov-east-1"|"us-gov-west-1"|"us-west-1"|"us-west-2"
-        },
-        "GrantFullControl": "string",
-        "GrantRead": "string",
-        "GrantReadACP": "string",
-        "GrantWrite": "string",
-        "GrantWriteACP": "string",
-        "ObjectLockEnabledForBucket": True|False,
-        "ObjectOwnership": "BucketOwnerPreferred"|"ObjectWriter"|"BucketOwnerEnforced"
-    }
-    ```
-    The following dictionary keys are *REQUIRED*: `Bucket`
+    # The input to this tool should be a JSON dictionary object with the following format:
+    # ```
+    # {
+    #     "Bucket": "`bucket_name`",
+    #     "ACL": "private"|"public-read"|"public-read-write"|"authenticated-read",
+    #     "CreateBucketConfiguration": {
+    #         "LocationConstraint": "af-south-1"|"ap-east-1"|"ap-northeast-1"|"ap-northeast-2"|"ap-northeast-3"|"ap-south-1"|"ap-southeast-1"|"ap-southeast-2"|"ap-southeast-3"|"ca-central-1"|"cn-north-1"|"cn-northwest-1"|"EU"|"eu-central-1"|"eu-north-1"|"eu-south-1"|"eu-west-1"|"eu-west-2"|"eu-west-3"|"me-south-1"|"sa-east-1"|"us-east-2"|"us-gov-east-1"|"us-gov-west-1"|"us-west-1"|"us-west-2"
+    #     },
+    #     "GrantFullControl": "string",
+    #     "GrantRead": "string",
+    #     "GrantReadACP": "string",
+    #     "GrantWrite": "string",
+    #     "GrantWriteACP": "string",
+    #     "ObjectLockEnabledForBucket": True|False,
+    #     "ObjectOwnership": "BucketOwnerPreferred"|"ObjectWriter"|"BucketOwnerEnforced"
+    # }
+    # ```
+    # The following dictionary keys are *REQUIRED*: `Bucket`
 
-    All other dictionary keys are optional.
+    # All other dictionary keys are optional.
     
-    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+    # *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
 
-    JSON values inside of `` are meant to be filled by the agent.
-    JSON values separated by | represent the unique set of values that may used.
-    Otherwise, the data type of the value is shown.
+    # JSON values inside of `` are meant to be filled by the agent.
+    # JSON values separated by | represent the unique set of values that may used.
+    # Otherwise, the data type of the value is shown.
 
-    For example, if you wanted to create the S3 bucket `MyBucket` you would generate the JSON:
-    ```
-    {
-        "Bucket": "MyBucket"
-    }
-    ```
+    # For example, if you wanted to create the S3 bucket `MyBucket` you would generate the JSON:
+    # ```
+    # {
+    #     "Bucket": "MyBucket"
+    # }
+    # ```
 
-    As another example, if you wanted to create the S3 Bucket `MyBucket` in us-west-2 you would generate the JSON:
-    ```
-    {
-        "Bucket": "MyBucket",
-        "CreateBucketConfiguration": {
-            "LocationConstraint": "us-west-2"
-        }
-    }
-    ```
+    # As another example, if you wanted to create the S3 Bucket `MyBucket` in us-west-2 you would generate the JSON:
+    # ```
+    # {
+    #     "Bucket": "MyBucket",
+    #     "CreateBucketConfiguration": {
+    #         "LocationConstraint": "us-west-2"
+    #     }
+    # }
+    # ```
 
-    The tool outputs a message indicating the success or failure of the create S3 bucket operation.
-    """
+    # The tool outputs a message indicating the success or failure of the create S3 bucket operation.
+    # """
 
     @property
     def short_description(self) -> str:
         return self.description.split('.')[0]
 
-    # def _run(
-    #     self,
-    #     bucket_name: str,
-    #     run_manager: Optional[CallbackManagerForToolRun] = None,
-    # ) -> str:
-    #     """Use the tool."""
-    #     s3_client = boto3.client('s3')
-
-    #     response = None
-    #     try:
-    #         # create bucket
-    #         _ = s3_client.create_bucket(Bucket=bucket_name)
-            
-    #         # Convert the policy from JSON dict to string
-    #         bucket_policy = json.dumps(DEFAULT_BUCKET_POLICY).replace("REPLACE", bucket_name)
-
-    #         # Set the new policy
-    #         s3_client.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy)
-
-    #         response = f"Successfully created S3 Bucket with name {bucket_name}."
-    #     except Exception as e:
-    #         response = e
-
-    #     return response
     def _run(
         self,
-        create_bucket_json: str,
+        bucket_name: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        print(f"MY JSON INPUT IS:\n{create_bucket_json}")
-
-        # parse JSON
-        create_bucket_kwargs = None
-        try:
-            create_bucket_kwargs = json.loads(create_bucket_json.strip().strip('`'))
-        except Exception as e:
-            raise Exception("Failed to parse LLM input to CreateS3Bucket tool")
-
         s3_client = boto3.client('s3')
 
         response = None
         try:
             # create bucket
-            _ = s3_client.create_bucket(**create_bucket_kwargs)
+            _ = s3_client.create_bucket(Bucket=bucket_name)
             
             # Convert the policy from JSON dict to string
             bucket_policy = json.dumps(DEFAULT_BUCKET_POLICY).replace("REPLACE", bucket_name)
 
             # Set the new policy
-            s3_client.put_bucket_policy(Bucket=create_bucket_kwargs['Bucket'], Policy=bucket_policy)
+            s3_client.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy)
 
-            response = f"Successfully created S3 Bucket with name {create_bucket_kwargs['Bucket']}."
+            response = f"Successfully created S3 Bucket with name {bucket_name}."
         except Exception as e:
             response = e
 
         return response
+
+    # def _run(
+    #     self,
+    #     create_bucket_json: str,
+    #     run_manager: Optional[CallbackManagerForToolRun] = None,
+    # ) -> str:
+    #     """Use the tool."""
+    #     print(f"MY JSON INPUT IS:\n{create_bucket_json}")
+
+    #     # parse JSON
+    #     create_bucket_kwargs = None
+    #     try:
+    #         create_bucket_kwargs = json.loads(create_bucket_json.strip().strip('`'))
+    #     except Exception as e:
+    #         raise Exception("Failed to parse LLM input to CreateS3Bucket tool")
+
+    #     s3_client = boto3.client('s3')
+
+    #     response = None
+    #     try:
+    #         # create bucket
+    #         _ = s3_client.create_bucket(**create_bucket_kwargs)
+            
+    #         # Convert the policy from JSON dict to string
+    #         bucket_policy = json.dumps(DEFAULT_BUCKET_POLICY).replace("REPLACE", bucket_name)
+
+    #         # Set the new policy
+    #         s3_client.put_bucket_policy(Bucket=create_bucket_kwargs['Bucket'], Policy=bucket_policy)
+
+    #         response = f"Successfully created S3 Bucket with name {create_bucket_kwargs['Bucket']}."
+    #     except Exception as e:
+    #         response = e
+
+    #     return response
 
 
 class CreateRedshiftCluster(AWSTool):
