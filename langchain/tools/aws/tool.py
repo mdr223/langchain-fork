@@ -128,10 +128,10 @@ class ToolSearch(BaseTool):
     name = "ToolSearch"
     description = (
         "This tool looks up and returns the descriptions of other tools provided to the LLM agent. This can help the agent decide which tool to use to respond to a user's input, as well as how to use that tool."
-        "The input to this tool should be a comma separated list of one or more strings."
-        "Each string is the name of another tool provided to the LLM agent, which the agent would like to lookup the description for."
-        "For example, `SomeToolA,SomeToolB` would be the input if you wanted to look up the descriptions of tools `SomeToolA` and `SomeToolB` and learn how to properly use them."
-        "This tool's output contains the descriptions of all the tools that are provided as input."
+        " The input to this tool should be a comma separated list of one or more strings."
+        " Each string is the name of another tool provided to the LLM agent, which the agent would like to lookup the description for."
+        " For example, `SomeToolA,SomeToolB` would be the input if you wanted to look up the descriptions of tools `SomeToolA` and `SomeToolB` and learn how to properly use them."
+        " This tool's output contains the descriptions of all the tools that are provided as input."
     )
     tool_descriptions: Dict[str, str] = {}
 
@@ -196,9 +196,9 @@ class CreateIAMRole(AWSTool):
     name = "Create AWS IAM role"
     description = (
         "This tool creates an IAM role in the user's account with the name provided to the tool."
-        "The input to this tool should be the name of the IAM role you wish to create."
-        "For example, `MyRole` would be the input if you wanted to create the IAM role `MyRole`."
-        "The tool outputs a message indicating the success or failure of the create role operation."
+        " The input to this tool should be the name of the IAM role you wish to create."
+        " For example, `MyRole` would be the input if you wanted to create the IAM role `MyRole`."
+        " The tool outputs a message indicating the success or failure of the create role operation."
     )
 
     @property
@@ -234,9 +234,9 @@ class AttachIAMPolicy(AWSTool):
     name = "Attach AWS IAM policy to AWS IAM role"
     description = (
         "This tool attaches the given IAM policy to the given IAM role."
-        "The input to this tool should be a comma separated list of strings of length two, representing the IAM policy you wish to attach and the IAM role you wish to attach it to."
-        "For example, `SomePolicy,SomeRole` would be the input if you wanted to attach the policy `SomePolicy` to the role `SomeRole`."
-        "The tool outputs a message indicating the success or failure of the attach policy operation."
+        " The input to this tool should be a comma separated list of strings of length two, representing the IAM policy you wish to attach and the IAM role you wish to attach it to."
+        " For example, `SomePolicy,SomeRole` would be the input if you wanted to attach the policy `SomePolicy` to the role `SomeRole`."
+        " The tool outputs a message indicating the success or failure of the attach policy operation."
     )
 
     @property
@@ -278,8 +278,8 @@ class CreateKMSKey(AWSTool):
     name = "Create Key Management Service (KMS) key"
     description = (
         "This tool creates a KMS key."
-        "The tool takes no input."
-        "The tool outputs the `KeyId` of the key that it created."
+        " The tool takes no input."
+        " The tool outputs the `KeyId` of the key that it created."
     )
 
     @property
@@ -308,37 +308,116 @@ class CreateS3Bucket(AWSTool):
     """Create S3 Bucket in the user's AWS account."""
 
     name = "Create S3 Bucket"
-    description = (
-        "This tool creates an S3 bucket with the given bucket name."
-        "The input to this tool should be the name of the S3 bucket you want to create."
-        "For example, `MyBucket` would be the input if you wanted to create the S3 bucket `MyBucket`."
-        "The tool outputs a message indicating the success or failure of the create S3 bucket operation."
-    )
+    # description = (
+    #     "This tool creates an S3 bucket with the given bucket name."
+    #     " The input to this tool should be the name of the S3 bucket you want to create."
+    #     " For example, `MyBucket` would be the input if you wanted to create the S3 bucket `MyBucket`."
+    #     " The tool outputs a message indicating the success or failure of the create S3 bucket operation."
+    # )
+    description = """This tool creates an S3 bucket with the given bucket name.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "Bucket": "`bucket_name`",
+        "ACL": "private"|"public-read"|"public-read-write"|"authenticated-read",
+        "CreateBucketConfiguration": {
+            "LocationConstraint": "af-south-1"|"ap-east-1"|"ap-northeast-1"|"ap-northeast-2"|"ap-northeast-3"|"ap-south-1"|"ap-southeast-1"|"ap-southeast-2"|"ap-southeast-3"|"ca-central-1"|"cn-north-1"|"cn-northwest-1"|"EU"|"eu-central-1"|"eu-north-1"|"eu-south-1"|"eu-west-1"|"eu-west-2"|"eu-west-3"|"me-south-1"|"sa-east-1"|"us-east-2"|"us-gov-east-1"|"us-gov-west-1"|"us-west-1"|"us-west-2"
+        },
+        "GrantFullControl": "string",
+        "GrantRead": "string",
+        "GrantReadACP": "string",
+        "GrantWrite": "string",
+        "GrantWriteACP": "string",
+        "ObjectLockEnabledForBucket": True|False,
+        "ObjectOwnership": "BucketOwnerPreferred"|"ObjectWriter"|"BucketOwnerEnforced"
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `Bucket`
+
+    All other dictionary keys are optional.
+    
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to create the S3 bucket `MyBucket` you would generate the JSON:
+    ```
+    {
+        "Bucket": "MyBucket`,
+    }
+    ```
+
+    As another example, if you wanted to create the S3 Bucket `MyBucket` in us-west-2 you would generate the JSON:
+    ```
+    {
+        "Bucket": "MyBucket`,
+        "CreateBucketConfiguration": {
+            "LocationConstraint": "us-west-2"
+        },
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the create S3 bucket operation.
+    """
 
     @property
     def short_description(self) -> str:
         return self.description.split('.')[0]
 
+    # def _run(
+    #     self,
+    #     bucket_name: str,
+    #     run_manager: Optional[CallbackManagerForToolRun] = None,
+    # ) -> str:
+    #     """Use the tool."""
+    #     s3_client = boto3.client('s3')
+
+    #     response = None
+    #     try:
+    #         # create bucket
+    #         _ = s3_client.create_bucket(Bucket=bucket_name)
+            
+    #         # Convert the policy from JSON dict to string
+    #         bucket_policy = json.dumps(DEFAULT_BUCKET_POLICY).replace("REPLACE", bucket_name)
+
+    #         # Set the new policy
+    #         s3_client.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy)
+
+    #         response = f"Successfully created S3 Bucket with name {bucket_name}."
+    #     except Exception as e:
+    #         response = e
+
+    #     return response
     def _run(
         self,
-        bucket_name: str,
+        create_bucket_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        # parse JSON
+        create_bucket_kwargs = None
+        try:
+            create_bucket_kwargs = json.loads(create_bucket_json.strip().strip('`'))
+        Exception as e:
+            raise Exception("Failed to parse LLM input to CreateS3Bucket tool")
+
         s3_client = boto3.client('s3')
 
         response = None
         try:
             # create bucket
-            _ = s3_client.create_bucket(Bucket=bucket_name)
+            _ = s3_client.create_bucket(**create_bucket_kwargs)
             
             # Convert the policy from JSON dict to string
             bucket_policy = json.dumps(DEFAULT_BUCKET_POLICY).replace("REPLACE", bucket_name)
 
             # Set the new policy
-            s3_client.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy)
+            s3_client.put_bucket_policy(Bucket=create_bucket_kwargs['Bucket'], Policy=bucket_policy)
 
-            response = f"Successfully created S3 Bucket with name {bucket_name}."
+            response = f"Successfully created S3 Bucket with name {create_bucket_kwargs['Bucket']}."
         except Exception as e:
             response = e
 
@@ -350,17 +429,16 @@ class CreateRedshiftCluster(AWSTool):
     name = "Create Redshift cluster"
     description = (
         "This tool creates a Redshift Cluster using the given `cluster_name` in the user's AWS account."
-        "The input to this tool should be a comma separated list of strings of length one, two, three, or four."
-        "If the input is of length one, the string represents the name of the cluster the user wishes to create."
-        #"If the input is of length two, the first string represents the name of the cluster and the second string represents the node type to be used in creating the cluster."
-        "If the input is of length two, the second string represents the node type to be used in creating the cluster."
-        "If the input is of length three, the third string represents the number of nodes to be used in creating the cluster."
-        "If the input is of length four, the fourth string represents the security group ID to be used in creating the cluster."
-        "For example, `SomeCluster` would be the input if you wanted to create the cluster `SomeCluster`."
-        "As another example, `SomeCluster,ds2.xlarge` would be the input if you wanted to create a single-node cluster `SomeCluster` with the node type `ds2.xlarge`."
-        "As another example, `SomeCluster,ds2.xlarge,4` would be the input if you wanted to create a multi-node cluster `SomeCluster` with four nodes of node type `ds2.xlarge`."
-        "As another example, `SomeCluster,ds2.xlarge,4,sg-0a1b2c3d4e5f67890` would be the input if you wanted to create a multi-node cluster `SomeCluster` with four nodes of node type `ds2.xlarge` using the security group `sg-0a1b2c3d4e5f67890`."
-        "The tool outputs a message indicating the success or failure of the create cluster operation."
+        " The input to this tool should be a comma separated list of strings of length one, two, three, or four."
+        " If the input is of length one, the string represents the name of the cluster the user wishes to create."
+        " If the input is of length two, the second string represents the node type to be used in creating the cluster."
+        " If the input is of length three, the third string represents the number of nodes to be used in creating the cluster."
+        " If the input is of length four, the fourth string represents the security group ID to be used in creating the cluster."
+        " For example, `SomeCluster` would be the input if you wanted to create the cluster `SomeCluster`."
+        " As another example, `SomeCluster,ds2.xlarge` would be the input if you wanted to create a single-node cluster `SomeCluster` with the node type `ds2.xlarge`."
+        " As another example, `SomeCluster,ds2.xlarge,4` would be the input if you wanted to create a multi-node cluster `SomeCluster` with four nodes of node type `ds2.xlarge`."
+        " As another example, `SomeCluster,ds2.xlarge,4,sg-0a1b2c3d4e5f67890` would be the input if you wanted to create a multi-node cluster `SomeCluster` with four nodes of node type `ds2.xlarge` using the security group `sg-0a1b2c3d4e5f67890`."
+        " The tool outputs a message indicating the success or failure of the create cluster operation."
     )
 
     @property
@@ -432,12 +510,12 @@ class CreateRedshiftServerlessNamespace(AWSTool):
     name = "Create Redshift Serverless namespace"
     description = (
         "This tool creates a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account."
-        "The input to this tool should be a comma separated list of strings of length one or length two."
-        "If the input is of length one, the string represents the name of the namespace the user wishes to create."
-        "If the input is of length two, the first string represents the name of the namespace and the second string represents the KMS KeyId to be used in creating the namespace."
-        "For example, `SomeNamespace` would be the input if you wanted to create the namespace `SomeNamespace`."
-        "As another example, `SomeNamespace,SomeKeyId` would be the input if you wanted to create the namespace `SomeNamespace` with the KMS key with KeyId `SomeKeyId`."
-        "The tool outputs a message indicating the success or failure of the create namespace operation."
+        " The input to this tool should be a comma separated list of strings of length one or length two."
+        " If the input is of length one, the string represents the name of the namespace the user wishes to create."
+        " If the input is of length two, the first string represents the name of the namespace and the second string represents the KMS KeyId to be used in creating the namespace."
+        " For example, `SomeNamespace` would be the input if you wanted to create the namespace `SomeNamespace`."
+        " As another example, `SomeNamespace,SomeKeyId` would be the input if you wanted to create the namespace `SomeNamespace` with the KMS key with KeyId `SomeKeyId`."
+        " The tool outputs a message indicating the success or failure of the create namespace operation."
     )
 
     @property
@@ -498,12 +576,12 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
     name = "Create Redshift Serverless workgroup"
     description = (
         "This tool creates a Redshift Serverless workgroup using the given `workgroup_name` in the namespace specified by `namespace_name`."
-        "The input to this tool should be a comma separated list of strings of length two or three."
-        "If the input is of length two, the first string represents the name of the workgroup you wish to create (i.e. `workgroup_name`) and the second string represents namespace it should be created in (i.e. `namespace_name`)."
-        "If the input is of length three, the third string represents the security group ID to be used in creating the workgroup."
-        "For example, `SomeWorkgroup,SomeNamespace` would be the input if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace`."
-        "As another example, `SomeWorkgroup,SomeNamespace,sg-0a1b2c3d4e5f67890` would be the input if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace` using the security group `sg-0a1b2c3d4e5f67890`."
-        "The tool outputs a message indicating the success or failure of the create workgroup operation."
+        " The input to this tool should be a comma separated list of strings of length two or three."
+        " If the input is of length two, the first string represents the name of the workgroup you wish to create (i.e. `workgroup_name`) and the second string represents namespace it should be created in (i.e. `namespace_name`)."
+        " If the input is of length three, the third string represents the security group ID to be used in creating the workgroup."
+        " For example, `SomeWorkgroup,SomeNamespace` would be the input if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace`."
+        " As another example, `SomeWorkgroup,SomeNamespace,sg-0a1b2c3d4e5f67890` would be the input if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace` using the security group `sg-0a1b2c3d4e5f67890`."
+        " The tool outputs a message indicating the success or failure of the create workgroup operation."
     )
 
     @property
@@ -553,9 +631,9 @@ class DeleteRedshiftCluster(AWSTool):
     name = "Delete Redshift cluster"
     description = (
         "This tool deletes a Redshift cluster using the given `cluster_name`."
-        "The input to this tool should be a string representing the name of the cluster you wish to delete (i.e. `cluster_name`)."
-        "For example, `SomeCluster` would be the input if you wanted to delete the cluster `SomeCluster`."
-        "The tool outputs a message indicating the success or failure of the delete cluster operation."
+        " The input to this tool should be a string representing the name of the cluster you wish to delete (i.e. `cluster_name`)."
+        " For example, `SomeCluster` would be the input if you wanted to delete the cluster `SomeCluster`."
+        " The tool outputs a message indicating the success or failure of the delete cluster operation."
     )
 
     @property
@@ -590,9 +668,9 @@ class DeleteRedshiftServerlessNamespace(AWSTool):
     name = "Delete Redshift Serverless namespace"
     description = (
         "This tool deletes a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account."
-        "The input to this tool should be a string representing the name of the namespace the user wishes to delete."
-        "For example, `SomeNamespace` would be the input if you wanted to delete the namespace `SomeNamespace`."
-        "The tool outputs a message indicating the success or failure of the delete namespace operation."
+        " The input to this tool should be a string representing the name of the namespace the user wishes to delete."
+        " For example, `SomeNamespace` would be the input if you wanted to delete the namespace `SomeNamespace`."
+        " The tool outputs a message indicating the success or failure of the delete namespace operation."
     )
 
     @property
@@ -623,9 +701,9 @@ class DeleteRedshiftServerlessWorkgroup(AWSTool):
     name = "Delete Redshift Serverless workgroup"
     description = (
         "This tool deletes a Redshift Serverless workgroup using the given `workgroup_name`."
-        "The input to this tool should be a string representing the name of the workgroup you wish to delete (i.e. `workgroup_name`)."
-        "For example, `SomeWorkgroup` would be the input if you wanted to delete the workgroup `SomeWorkgroup`."
-        "The tool outputs a message indicating the success or failure of the delete workgroup operation."
+        " The input to this tool should be a string representing the name of the workgroup you wish to delete (i.e. `workgroup_name`)."
+        " For example, `SomeWorkgroup` would be the input if you wanted to delete the workgroup `SomeWorkgroup`."
+        " The tool outputs a message indicating the success or failure of the delete workgroup operation."
     )
 
     @property
@@ -657,9 +735,9 @@ class LoadTableFromS3Cluster(AWSTool):
     name = "Load S3 table into Redshift cluster."
     description = (
         "This tool loads a database table from a (set of) parquet file(s) in S3 into a provisioned Redshift cluster."
-        "The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift cluster you wish to load the data into."
-        "For example, `s3://somebucket/someprefix/file.pq,SomeCluster` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the cluster `SomeCluster`."
-        "The tool outputs a message indicating the success or failure of the load table operation."
+        " The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift cluster you wish to load the data into."
+        " For example, `s3://somebucket/someprefix/file.pq,SomeCluster` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the cluster `SomeCluster`."
+        " The tool outputs a message indicating the success or failure of the load table operation."
     )
 
     @property
@@ -719,9 +797,9 @@ class LoadTableFromS3Serverless(AWSTool):
     name = "Load S3 table into Redshift Serverless workgroup"
     description = (
         "This tool loads a database table from a (set of) parquet file(s) in S3 into a workgroup/database in Redshift Serverless."
-        "The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift Serverless workgroup you wish to load the data into."
-        "For example, `s3://somebucket/someprefix/file.pq,SomeWorkgroup` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the workgroup `SomeWorkgroup`."
-        "The tool outputs a message indicating the success or failure of the load table operation."
+        " The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift Serverless workgroup you wish to load the data into."
+        " For example, `s3://somebucket/someprefix/file.pq,SomeWorkgroup` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the workgroup `SomeWorkgroup`."
+        " The tool outputs a message indicating the success or failure of the load table operation."
     )
 
     @property
@@ -780,12 +858,12 @@ class SelectQueryDataFromTableServerless(AWSTool):
     name = "Run select query on Redshift Serverless table"
     description = (
         "This tool runs a select query on a given table in Redshift Serverless."
-        "The input to this tool should be a comma separated list of strings."
-        "The first string represents the name of the workgroup the table lives in."
-        "The second string represents the name of the table to query."
-        "All subsequent strings represent the names of columns to query from the table."
-        "For example, `SomeWorkgroup,SomeTable,ColumnA,ColumnB` would be the input if you wanted to query the columns `ColumnA` and `ColumnB` from the table `SomeTable` in the workgroup `SomeWorkgroup`."
-        "The tool outputs a message indicating the success or failure of the query operation."
+        " The input to this tool should be a comma separated list of strings."
+        " The first string represents the name of the workgroup the table lives in."
+        " The second string represents the name of the table to query."
+        " All subsequent strings represent the names of columns to query from the table."
+        " For example, `SomeWorkgroup,SomeTable,ColumnA,ColumnB` would be the input if you wanted to query the columns `ColumnA` and `ColumnB` from the table `SomeTable` in the workgroup `SomeWorkgroup`."
+        " The tool outputs a message indicating the success or failure of the query operation."
     )
 
     @property
