@@ -346,17 +346,17 @@ class CreateS3Bucket(AWSTool):
     For example, if you wanted to create the S3 bucket `MyBucket` you would generate the JSON:
     ```
     {
-        "Bucket": "MyBucket`,
+        "Bucket": "MyBucket"
     }
     ```
 
     As another example, if you wanted to create the S3 Bucket `MyBucket` in us-west-2 you would generate the JSON:
     ```
     {
-        "Bucket": "MyBucket`,
+        "Bucket": "MyBucket",
         "CreateBucketConfiguration": {
             "LocationConstraint": "us-west-2"
-        },
+        }
     }
     ```
 
