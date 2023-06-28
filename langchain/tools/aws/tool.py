@@ -397,6 +397,8 @@ class CreateS3Bucket(AWSTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        print(f"MY JSON INPUT IS:\n{create_bucket_json}")
+
         # parse JSON
         create_bucket_kwargs = None
         try:
