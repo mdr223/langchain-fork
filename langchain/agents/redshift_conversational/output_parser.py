@@ -28,12 +28,12 @@ class RedshiftConvoOutputParser(AgentOutputParser):
                 raise OutputParserException(f"Could not parse LLM output: `{text}`")
 
         # handle Action
-        regex = r"Action: (.*?)[\n]*Action Input: (.*)"
+        regex = r"Action: (.*?)[\n]*Action Input:"
         match = re.search(regex, text)
         if not match:
             raise OutputParserException(f"Could not parse LLM output: `{text}`")
         action = match.group(1)
-        action_input = match.group(2)
+        action_input = text.split("Action Input:")[-1]
         return AgentAction(action.strip(), action_input.strip(" ").strip('"'), text)
 
     @property
