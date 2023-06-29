@@ -569,9 +569,9 @@ class CreateRedshiftServerlessNamespace(AWSTool):
             if 'defaultIamRoleArn' not in create_namespace_kwargs:
                 create_namespace_kwargs['defaultIamRoleArn'] = AGENT_IAM_ROLE
             if 'iamRoles' not in create_namespace_kwargs:
+                user_iam_role = get_user_iam_role()
                 create_namespace_kwargs['iamRoles'] = [AGENT_IAM_ROLE, user_iam_role]
 
-            user_iam_role = get_user_iam_role()
             _ = rs_client.create_namespace(**create_namespace_kwargs)
             response = f"Successfully created Redshift Serverless namespace {create_namespace_kwargs['namespaceName']}."
         except Exception as e:
