@@ -398,8 +398,6 @@ class CreateS3Bucket(AWSTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        print(f"MY JSON INPUT IS:\n{create_bucket_json}")
-
         # parse JSON
         create_bucket_kwargs = None
         try:
@@ -415,7 +413,7 @@ class CreateS3Bucket(AWSTool):
             _ = s3_client.create_bucket(**create_bucket_kwargs)
             
             # Convert the policy from JSON dict to string
-            bucket_policy = json.dumps(DEFAULT_BUCKET_POLICY).replace("REPLACE", bucket_name)
+            bucket_policy = json.dumps(DEFAULT_BUCKET_POLICY).replace("REPLACE", create_bucket_kwargs['Bucket'])
 
             # Set the new policy
             s3_client.put_bucket_policy(Bucket=create_bucket_kwargs['Bucket'], Policy=bucket_policy)
