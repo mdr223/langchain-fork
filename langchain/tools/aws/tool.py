@@ -308,12 +308,6 @@ class CreateS3Bucket(AWSTool):
     """Create S3 Bucket in the user's AWS account."""
 
     name = "Create S3 Bucket"
-    # description = (
-    #     "This tool creates an S3 bucket with the given bucket name."
-    #     " The input to this tool should be the name of the S3 bucket you want to create."
-    #     " For example, `MyBucket` would be the input if you wanted to create the S3 bucket `MyBucket`."
-    #     " The tool outputs a message indicating the success or failure of the create S3 bucket operation."
-    # )
     description = """This tool creates an S3 bucket with the given bucket name.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -366,31 +360,6 @@ class CreateS3Bucket(AWSTool):
     @property
     def short_description(self) -> str:
         return self.description.split('.')[0]
-
-    # def _run(
-    #     self,
-    #     bucket_name: str,
-    #     run_manager: Optional[CallbackManagerForToolRun] = None,
-    # ) -> str:
-    #     """Use the tool."""
-    #     s3_client = boto3.client('s3')
-
-    #     response = None
-    #     try:
-    #         # create bucket
-    #         _ = s3_client.create_bucket(Bucket=bucket_name)
-            
-    #         # Convert the policy from JSON dict to string
-    #         bucket_policy = json.dumps(DEFAULT_BUCKET_POLICY).replace("REPLACE", bucket_name)
-
-    #         # Set the new policy
-    #         s3_client.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy)
-
-    #         response = f"Successfully created S3 Bucket with name {bucket_name}."
-    #     except Exception as e:
-    #         response = e
-
-    #     return response
 
     def _run(
         self,
@@ -509,15 +478,67 @@ class CreateRedshiftServerlessNamespace(AWSTool):
     """Create a namespace for Redshift Serverless in the user's AWS account."""
 
     name = "Create Redshift Serverless namespace"
-    description = (
-        "This tool creates a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account."
-        " The input to this tool should be a comma separated list of strings of length one or length two."
-        " If the input is of length one, the string represents the name of the namespace the user wishes to create."
-        " If the input is of length two, the first string represents the name of the namespace and the second string represents the KMS KeyId to be used in creating the namespace."
-        " For example, `SomeNamespace` would be the input if you wanted to create the namespace `SomeNamespace`."
-        " As another example, `SomeNamespace,SomeKeyId` would be the input if you wanted to create the namespace `SomeNamespace` with the KMS key with KeyId `SomeKeyId`."
-        " The tool outputs a message indicating the success or failure of the create namespace operation."
-    )
+    # description = (
+    #     "This tool creates a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account."
+    #     " The input to this tool should be a comma separated list of strings of length one or length two."
+    #     " If the input is of length one, the string represents the name of the namespace the user wishes to create."
+    #     " If the input is of length two, the first string represents the name of the namespace and the second string represents the KMS KeyId to be used in creating the namespace."
+    #     " For example, `SomeNamespace` would be the input if you wanted to create the namespace `SomeNamespace`."
+    #     " As another example, `SomeNamespace,SomeKeyId` would be the input if you wanted to create the namespace `SomeNamespace` with the KMS key with KeyId `SomeKeyId`."
+    #     " The tool outputs a message indicating the success or failure of the create namespace operation."
+    # )
+    description = """This tool creates a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "namespaceName": "`namespace_name`",
+        "adminUserPassword": "string",
+        "adminUsername": "string",
+        "dbName": "string",
+        "defaultIamRoleArn": "string",
+        "iamRoles": [
+            "string",
+        ],
+        "kmsKeyId": "string",
+        "logExports": [
+            "useractivitylog"|"userlog"|"connectionlog",
+        ],
+        "tags": [
+            {
+                "key": "string",
+                "value": "string"
+            },
+        ]
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `namespaceName`
+
+    All other dictionary keys are optional.
+    
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to create the namespace `SomeNamespace` you would generate the JSON:
+    ```
+    {
+        "namespaceName": "SomeNamespace"
+    }
+    ```
+
+    As another example, if you wanted to create the namespace `SomeNamespace` with the KMS key with KeyId `SomeKeyId` you would generate the JSON:
+    ```
+    {
+        "namespaceName": "SomeNamespace",
+        "kmsKeyId": "string"
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the create namespace operation.
+    """
 
     @property
     def short_description(self) -> str:
@@ -525,18 +546,14 @@ class CreateRedshiftServerlessNamespace(AWSTool):
 
     def _run(
         self,
-        namespace_name_and_kms_key_id: str,
+        create_namespace_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        # parse namespace_name and kms_key_id (if provided)
-        namespace_name, kms_key_id = None, None
+        # parse JSON
+        create_namespace_kwargs = None
         try:
-            if ',' in namespace_name_and_kms_key_id:
-                namespace_name = namespace_name_and_kms_key_id.split(',')[0]
-                kms_key_id = namespace_name_and_kms_key_id.split(',')[1]
-            else:
-                namespace_name = namespace_name_and_kms_key_id
+            create_namespace_kwargs = json.loads(create_namespace_json.strip().strip('`'))
         except Exception as e:
             raise Exception("Failed to parse LLM input to CreateRedshiftServerlessNamespace tool")
 
@@ -544,27 +561,14 @@ class CreateRedshiftServerlessNamespace(AWSTool):
 
         response = None
         try:
+            if 'defaultIamRoleArn' not in create_namespace_kwargs:
+                create_namespace_kwargs['defaultIamRoleArn'] = AGENT_IAM_ROLE
+            if 'iamRoles' not in create_namespace_kwargs:
+                create_namespace_kwargs['iamRoles'] = [AGENT_IAM_ROLE, user_iam_role]
+
             user_iam_role = get_user_iam_role()
-            if kms_key_id is None or kms_key_id == "":
-                _ = rs_client.create_namespace(
-                    namespaceName=namespace_name,
-                    adminUserPassword=ADMIN_USER_PASSWORD,
-                    adminUsername=ADMIN_USERNAME,
-                    dbName=DB_NAME,
-                    defaultIamRoleArn=AGENT_IAM_ROLE,
-                    iamRoles=[AGENT_IAM_ROLE, user_iam_role],
-                )
-            else:
-                _ = rs_client.create_namespace(
-                    namespaceName=namespace_name,
-                    kmsKeyId=kms_key_id,
-                    adminUserPassword=ADMIN_USER_PASSWORD,
-                    adminUsername=ADMIN_USERNAME,
-                    dbName=DB_NAME,
-                    defaultIamRoleArn=AGENT_IAM_ROLE,
-                    iamRoles=[AGENT_IAM_ROLE, user_iam_role],
-                )
-            response = f"Successfully created Redshift Serverless namespace {namespace_name}."
+            _ = rs_client.create_namespace(**create_namespace_kwargs)
+            response = f"Successfully created Redshift Serverless namespace {create_namespace_kwargs['namespaceName']}."
         except Exception as e:
             response = e
 
@@ -575,15 +579,66 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
     """Create a workgroup for Redshift Serverless in the user's AWS account."""
 
     name = "Create Redshift Serverless workgroup"
-    description = (
-        "This tool creates a Redshift Serverless workgroup using the given `workgroup_name` in the namespace specified by `namespace_name`."
-        " The input to this tool should be a comma separated list of strings of length two or three."
-        " If the input is of length two, the first string represents the name of the workgroup you wish to create (i.e. `workgroup_name`) and the second string represents namespace it should be created in (i.e. `namespace_name`)."
-        " If the input is of length three, the third string represents the security group ID to be used in creating the workgroup."
-        " For example, `SomeWorkgroup,SomeNamespace` would be the input if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace`."
-        " As another example, `SomeWorkgroup,SomeNamespace,sg-0a1b2c3d4e5f67890` would be the input if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace` using the security group `sg-0a1b2c3d4e5f67890`."
-        " The tool outputs a message indicating the success or failure of the create workgroup operation."
-    )
+    description = """This tool creates a Redshift Serverless workgroup using the given `workgroup_name` in the namespace specified by `namespace_name`.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "workgroupName": "`workgroup_name`",
+        "namespaceName": "`namespace_name`",
+        "baseCapacity": 123,
+        "configParameters": [
+            {
+                "parameterKey": "string",
+                "parameterValue": "string"
+            },
+        ],
+        "enhancedVpcRouting": True|False,
+        "port": 123,
+        "publiclyAccessible": True|False,
+        "securityGroupIds": [
+            "string",
+        ],
+        "subnetIds": [
+            "string",
+        ],
+        "tags": [
+            {
+                "key": "string",
+                "value": "string"
+            },
+        ]
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `workgroupName`, `namespaceName`
+
+    All other dictionary keys are optional.
+    
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace` you would generate the JSON:
+    ```
+    {
+        "workgroupName": "SomeWorkgroup",
+        "namespaceName": "SomeNamespace"
+    }
+    ```
+
+    As another example, if you wanted to create the workgroup `SomeWorkgroup` in the namespace `SomeNamespace` using the security group `sg-0a1b2c3d4e5f67890` you would generate the JSON:
+    ```
+    {
+        "workgroupName": "SomeWorkgroup",
+        "namespaceName": "SomeNamespace",
+        "securityGroupIds": ["sg-0a1b2c3d4e5f67890"]
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the create workgroup operation.
+    """
 
     @property
     def short_description(self) -> str:
@@ -591,22 +646,14 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
 
     def _run(
         self,
-        workgroup_and_namespace_names: str,
+        create_workgroup_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        # parse workgroup_name and namespace_name
-        workgroup_name, namespace_name, security_group = None, None, None
+        # parse JSON
+        create_workgroup_kwargs = None
         try:
-            args = workgroup_and_namespace_names.split(',')
-            if len(args) == 2:
-                workgroup_name = args[0]
-                namespace_name = args[1]
-                security_group = create_redshift_security_group()
-            elif len(args) == 3:
-                workgroup_name = args[0]
-                namespace_name = args[1]
-                security_group = args[2]
+            create_workgroup_kwargs = json.loads(create_workgroup_json.strip().strip('`'))
         except Exception as e:
             raise Exception("Failed to parse LLM input to CreateRedshiftServerlessWorkgroup tool")
 
@@ -614,12 +661,8 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
 
         response = None
         try:
-            _ = rs_client.create_workgroup(
-                workgroupName=workgroup_name,
-                namespaceName=namespace_name,
-                securityGroupIds=[security_group],
-            )
-            response = f"Successfully created Redshift Serverless workgroup {workgroup_name} in namespace {namespace_name}."
+            _ = rs_client.create_workgroup(**create_workgroup_kwargs)
+            response = f"Successfully created Redshift Serverless workgroup {create_workgroup_kwargs['workgroupName']} in namespace {create_workgroup_kwargs['namespaceName']}."
         except Exception as e:
             response = e
 
@@ -667,12 +710,35 @@ class DeleteRedshiftServerlessNamespace(AWSTool):
     """Delete a namespace from Redshift Serverless in the user's AWS account."""
 
     name = "Delete Redshift Serverless namespace"
-    description = (
-        "This tool deletes a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account."
-        " The input to this tool should be a string representing the name of the namespace the user wishes to delete."
-        " For example, `SomeNamespace` would be the input if you wanted to delete the namespace `SomeNamespace`."
-        " The tool outputs a message indicating the success or failure of the delete namespace operation."
-    )
+    description = """This tool deletes a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "namespaceName": "`namespace_name`",
+        "finalSnapshotName": "string",
+        "finalSnapshotRetentionPeriod": 123
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `namespaceName`
+
+    All other dictionary keys are optional.
+    
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to delete the namespace `SomeNamespace` you would generate the JSON:
+    ```
+    {
+        "namespaceName": "SomeNamespace"
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the delete namespace operation.
+    """
 
     @property
     def short_description(self) -> str:
@@ -680,16 +746,23 @@ class DeleteRedshiftServerlessNamespace(AWSTool):
 
     def _run(
         self,
-        namespace_name: str,
+        delete_namespace_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        # parse JSON
+        delete_namespace_kwargs = None
+        try:
+            delete_namespace_kwargs = json.loads(delete_namespace_json.strip().strip('`'))
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to DeleteRedshiftServerlessNamespace tool")
+
         rs_client = boto3.client('redshift-serverless')
 
         response = None
         try:
-            _ = rs_client.delete_namespace(namespaceName=namespace_name)
-            response = f"Successfully deleted Redshift Serverless namespace {namespace_name}."
+            _ = rs_client.delete_namespace(**delete_namespace_kwargs)
+            response = f"Successfully deleted Redshift Serverless namespace {delete_namespace_kwargs['namespaceName']}."
         except Exception as e:
             response = e
 
@@ -700,12 +773,29 @@ class DeleteRedshiftServerlessWorkgroup(AWSTool):
     """Delete a workgroup from Redshift Serverless in the user's AWS account."""
 
     name = "Delete Redshift Serverless workgroup"
-    description = (
-        "This tool deletes a Redshift Serverless workgroup using the given `workgroup_name`."
-        " The input to this tool should be a string representing the name of the workgroup you wish to delete (i.e. `workgroup_name`)."
-        " For example, `SomeWorkgroup` would be the input if you wanted to delete the workgroup `SomeWorkgroup`."
-        " The tool outputs a message indicating the success or failure of the delete workgroup operation."
-    )
+    description = """This tool deletes a Redshift Serverless workgroup using the given `workgroup_name`.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "workgroupName": "`workgroup_name`"
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `workgroupName`
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to delete the workgroup `SomeWorkgroup` you would generate the JSON:
+    ```
+    {
+        "workgroupName": "SomeWorkgroup"
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the delete workgroup operation.
+    """
 
     @property
     def short_description(self) -> str:
@@ -713,17 +803,24 @@ class DeleteRedshiftServerlessWorkgroup(AWSTool):
 
     def _run(
         self,
-        workgroup_name: str,
+        delete_workgroup_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        # parse JSON
+        delete_workgroup_kwargs = None
+        try:
+            delete_workgroup_kwargs = json.loads(delete_workgroup_json.strip().strip('`'))
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to DeleteRedshiftServerlessWorkgroup tool")
+
         rs_client = boto3.client('redshift-serverless')
 
         response = None
         try:
             # delete the workgroup
-            res = rs_client.delete_workgroup(workgroupName=workgroup_name)
-            response = f"Successfully deleted Redshift Serverless workgroup {workgroup_name} from namespace {res['workgroup']['namespaceName']}."
+            res = rs_client.delete_workgroup(**delete_workgroup_kwargs)
+            response = f"Successfully deleted Redshift Serverless workgroup {delete_workgroup_kwargs['workgroupName']} from namespace {res['workgroup']['namespaceName']}."
         except Exception as e:
             response = e
 
