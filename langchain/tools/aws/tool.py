@@ -10,6 +10,7 @@ from langchain.tools.base import BaseTool
 
 import boto3
 import json
+import pyarrow.parquet
 import redshift_connector
 import secrets
 
@@ -67,6 +68,9 @@ ADMIN_USERNAME = "agentadmin"
 DB_NAME = "dev"
 VPC_ID = "vpc-0a8922b2e49b2c963"
 MAX_RESULTS = 10
+PANDAS_TYPE_TO_REDSHIFT_TYPE = {
+    "int32": "INTEGER"
+}
 
 def get_user_iam_role():
     """TODO replace this with a real function that get's the user's IAM role."""
@@ -561,6 +565,7 @@ class CreateRedshiftServerlessNamespace(AWSTool):
 
         response = None
         try:
+            # TODO: think through secure way to provide DB credentials
             if 'defaultIamRoleArn' not in create_namespace_kwargs:
                 create_namespace_kwargs['defaultIamRoleArn'] = AGENT_IAM_ROLE
             if 'iamRoles' not in create_namespace_kwargs:
@@ -893,12 +898,48 @@ class LoadTableFromS3Serverless(AWSTool):
     """Load a table from a parquet file or prefix in S3 into Redshift Serverless."""
 
     name = "Load S3 table into Redshift Serverless workgroup"
-    description = (
-        "This tool loads a database table from a (set of) parquet file(s) in S3 into a workgroup/database in Redshift Serverless."
-        " The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift Serverless workgroup you wish to load the data into."
-        " For example, `s3://somebucket/someprefix/file.pq,SomeWorkgroup` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the workgroup `SomeWorkgroup`."
-        " The tool outputs a message indicating the success or failure of the load table operation."
-    )
+    # description = (
+    #     "This tool loads a database table from a (set of) parquet file(s) in S3 into a workgroup/database in Redshift Serverless."
+    #     " The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift Serverless workgroup you wish to load the data into."
+    #     " For example, `s3://somebucket/someprefix/file.pq,SomeWorkgroup` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the workgroup `SomeWorkgroup`."
+    #     " The tool outputs a message indicating the success or failure of the load table operation."
+    # )
+    description = """This tool loads a database table from a (set of) parquet file(s) in S3 into a workgroup/database in Redshift Serverless.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "S3Key": "`s3_key_or_prefix`",
+        "workgroupName": "`workgroup_name`",
+        "adminUserPassword": "`password`",
+        "adminUsername": "`username`",
+        "dbName": "`db_name`"
+        "tableName": "string"
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `S3Key`, `workgroupName`, `adminUserPassword`, `adminUsername`, `dbName`
+
+    All other dictionary keys are optional.
+    
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the workgroup `SomeWorkgroup` using the adminUsername `admin`, adminUserPassword `Testing123`, and database `dev` you would generate the JSON:
+    ```
+    {
+        "S3Key": "s3://somebucket/someprefix/file.pq",
+        "workgroupName": "SomeWorkgroup",
+        "adminUserPassword": "admin",
+        "adminUsername": "Testing123",
+        "dbName": "dev"
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the load table operation.
+    """
 
     @property
     def short_description(self) -> str:
@@ -906,44 +947,64 @@ class LoadTableFromS3Serverless(AWSTool):
 
     def _run(
         self,
-        input: str,
+        input_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        # parse s3_key_or_prefix and workgroup_name from input
+        # parse JSON
+        input_kwargs = None
         try:
-            s3_key_or_prefix = input.split(',')[0]
-            workgroup_name = input.split(',')[1]
+            input_kwargs = json.loads(input_json.strip().strip('`'))
         except Exception as e:
             raise Exception("Failed to parse LLM input to LoadTableFromS3Serverless tool")
 
+        # TODO: think through secure way to provide DB credentials
         # create database connection
         # - hostname format: workgroup-name.account-number.aws-region.redshift-serverless.amazonaws.com
         conn = redshift_connector.connect(
-            host=f"{workgroup_name}.518251513740.us-east-1.redshift-serverless.amazonaws.com",
-            database=DB_NAME,
-            user=ADMIN_USERNAME,
-            password=ADMIN_USER_PASSWORD,
+            host=f"{input_kwargs['workgroupName']}.518251513740.us-east-1.redshift-serverless.amazonaws.com",
+            database=input_kwargs['dbName'],
+            user=input_kwargs['adminUsername'],
+            password=input_kwargs['adminUserPassword'],
         )
         cursor = conn.cursor()
 
-        # try executing query to load table
-        # TODO: remove dummy values
-        create_table_cmd = """CREATE TABLE mini_table (
-            order_id INTEGER NOT NULL,
-            customer_id INTEGER NOT NULL,
-            product_id INTEGER NOT NULL,
-            amount INTEGER NOT NULL
-        );
-        """
-        copy_table_cmd = f"""COPY mini_table FROM '{s3_key_or_prefix}' IAM_ROLE '{AGENT_IAM_ROLE}' FORMAT AS parquet"""
+        # construct table name if none was provided
+        if 'tableName' not in input_kwargs:
+            # query for existing table names
+            tablename_query = """SELECT DISTINCT tablename FROM PG_TABLE_DEF WHERE schemaname = 'public';"""
+            cursor.execute(tablename_query)
+            results = cursor.fetchall()
+
+            # construct new table name
+            tablenames = list(map(lambda res: res[0], results))
+            table_idx = 0
+            while f"table_copied_from_s3_{table_idx}" not in tablenames:
+                table_idx += 1
+
+            # set table name
+            input_kwargs['tableName'] = f"table_copied_from_s3_{table_idx}"
+
+        # query table's schema
+        schema = pyarrow.parquet.read_schema(input_kwargs['S3Key'], memory_map=True)
+        schema = {column: PANDAS_TYPE_TO_REDSHIFT_TYPE[str(pa_dtype)] for column, pa_dtype in zip(schema.names, schema.types)}
+
+        # construct command to create table in Redshift
+        col_str = ""
+        for col, dtype in schema.items():
+            col_str += f"{col} {dtype},"
+
+        create_table_cmd = f"""CREATE TABLE {table_name} ({col_str[:-1]});"""
+
+        # command to copy table from S3 to Redshift
+        copy_table_cmd = f"""COPY {input_kwargs['tableName']} FROM '{input_kwargs['S3Key']}' IAM_ROLE '{AGENT_IAM_ROLE}' FORMAT AS parquet"""
 
         response = None
         try:
             cursor.execute(create_table_cmd)
             cursor.execute(copy_table_cmd)
             conn.commit()
-            response = f"Successfully created table mini_table in {workgroup_name}."
+            response = f"Successfully created table {input_kwargs['tableName']} in {input_kwargs['workgroupName']}."
         except Exception as e:
             response = e
 
@@ -954,15 +1015,65 @@ class SelectQueryDataFromTableServerless(AWSTool):
     """Perform a select query on a specified table in Redshift."""
 
     name = "Run select query on Redshift Serverless table"
-    description = (
-        "This tool runs a select query on a given table in Redshift Serverless."
-        " The input to this tool should be a comma separated list of strings."
-        " The first string represents the name of the workgroup the table lives in."
-        " The second string represents the name of the table to query."
-        " All subsequent strings represent the names of columns to query from the table."
-        " For example, `SomeWorkgroup,SomeTable,ColumnA,ColumnB` would be the input if you wanted to query the columns `ColumnA` and `ColumnB` from the table `SomeTable` in the workgroup `SomeWorkgroup`."
-        " The tool outputs a message indicating the success or failure of the query operation."
-    )
+    # description = (
+    #     "This tool runs a select query on a given table in Redshift Serverless."
+    #     " The input to this tool should be a comma separated list of strings."
+    #     " The first string represents the name of the workgroup the table lives in."
+    #     " The second string represents the name of the table to query."
+    #     " All subsequent strings represent the names of columns to query from the table."
+    #     " For example, `SomeWorkgroup,SomeTable,ColumnA,ColumnB` would be the input if you wanted to query the columns `ColumnA` and `ColumnB` from the table `SomeTable` in the workgroup `SomeWorkgroup`."
+    #     " The tool outputs a message indicating the success or failure of the query operation."
+    # )
+    description = """This tool runs a select query on a given table in Redshift Serverless.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "workgroupName": "`workgroup_name`",
+        "tableName": "`table_name`",
+        "adminUserPassword": "`password`",
+        "adminUsername": "`username`",
+        "dbName": "`db_name`"
+        "columns": [
+            "string"
+        ]
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `workgroupName`, `tableName`, `adminUserPassword`, `adminUsername`, `dbName`
+
+    All other dictionary keys are optional.
+    
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to query the columns `ColumnA` and `ColumnB` from the table `SomeTable` in the workgroup `SomeWorkgroup` you would generate the JSON:
+    ```
+    {
+        "workgroupName": "SomeWorkgroup",
+        "tableName": "SomeTable",
+        "adminUserPassword": "admin",
+        "adminUsername": "Testing123",
+        "dbName": "dev",
+        "columns": ["ColumnA", "ColumnB"]
+    }
+    ```
+
+    If you want to query all columns in the table, simply omit the "columns" key:
+    ```
+    {
+        "workgroupName": "SomeWorkgroup",
+        "tableName": "SomeTable",
+        "adminUserPassword": "admin",
+        "adminUsername": "Testing123",
+        "dbName": "dev"
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the query operation.
+    """
 
     @property
     def short_description(self) -> str:
@@ -970,33 +1081,30 @@ class SelectQueryDataFromTableServerless(AWSTool):
 
     def _run(
         self,
-        input: str,
+        input_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        # parse workgroup_name, table_name, and columns from input
-        workgroup_name, table_name, columns = None, None, None
+        # parse JSON
+        input_kwargs = None
         try:
-            args = input.split(',')
-            workgroup_name = args[0]
-            table_name = args[1]
-            columns = args[2:]
+            input_kwargs = json.loads(input_json.strip().strip('`'))
         except Exception as e:
-            raise Exception("Failed to parse LLM input to SelectQueryDataFromTable tool")
+            raise Exception("Failed to parse LLM input to SelectQueryDataFromTableServerless tool")
 
         # create database connection
         # - hostname format: workgroup-name.account-number.aws-region.redshift-serverless.amazonaws.com
         conn = redshift_connector.connect(
             host=f"{workgroup_name}.518251513740.us-east-1.redshift-serverless.amazonaws.com",
-            database=DB_NAME,
-            user=ADMIN_USERNAME,
-            password=ADMIN_USER_PASSWORD,
+            database=input_kwargs['dbName'],
+            user=input_kwargs['adminUsername'],
+            password=input_kwargs['adminUserPassword'],
         )
         cursor = conn.cursor()
 
         # try executing select query on table
-        column_str = ",".join(columns)
-        select_cmd = f"""SELECT {column_str} FROM {table_name};"""
+        column_str = ",".join(input_kwargs['columns']) if "columns" in input_kwargs else "*"
+        select_cmd = f"""SELECT {column_str} FROM {input_kwargs['tableName']};"""
 
         response = None
         try:
