@@ -557,7 +557,7 @@ class CreateRedshiftServerlessNamespace(AWSTool):
         # parse JSON
         create_namespace_kwargs = None
         try:
-            create_namespace_kwargs = json.loads(create_namespace_json.strip().strip('`'))
+            create_namespace_kwargs = json.loads(create_namespace_json.strip().strip('`').strip('>'))
         except Exception as e:
             raise Exception("Failed to parse LLM input to CreateRedshiftServerlessNamespace tool")
 
@@ -658,7 +658,7 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
         # parse JSON
         create_workgroup_kwargs = None
         try:
-            create_workgroup_kwargs = json.loads(create_workgroup_json.strip().strip('`'))
+            create_workgroup_kwargs = json.loads(create_workgroup_json.strip().strip('`').strip('>'))
         except Exception as e:
             raise Exception("Failed to parse LLM input to CreateRedshiftServerlessWorkgroup tool")
 
