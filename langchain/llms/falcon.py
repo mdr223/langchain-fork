@@ -8,9 +8,10 @@ from pydantic import Field, root_validator
 from typing import Any, Dict, List, Mapping, Optional
 
 
-class Falcon(LLM):
+class Falcon7B(LLM):
     """Wrapper around falcon large language model."""
-
+    # 7b: falcon-7b-instruct-bf16-2023-06-08-17-59-43-889
+    # 40b: falcon-40b-instruct-bf16-2023-07-03-17-06-57-631
     model_name: str = Field("falcon-7b-instruct-bf16-2023-06-08-17-59-43-889", alias="model")
     """Model name to use."""
     max_tokens: int = 512
