@@ -12,7 +12,10 @@ class Falcon(LLM):
     """Wrapper around falcon large language model."""
     # 7b: falcon-7b-instruct-bf16-2023-06-08-17-59-43-889
     # 40b: falcon-40b-instruct-bf16-2023-07-03-17-06-57-631
-    model_name: str = Field("falcon-7b-instruct-bf16-2023-06-08-17-59-43-889", alias="model")
+    # ----
+    # bedrock 7b: falcon-7b-instruct-bf16-2023-07-03-19-51-07-347
+    # bedrock 40b: TODO
+    model_name: str = Field("falcon-7b-instruct-bf16-2023-07-03-19-51-07-347", alias="model")
     """Model name to use."""
     max_tokens: int = 512
     """The maximum number of tokens to generate in the completion.
@@ -61,7 +64,7 @@ class Falcon(LLM):
             "max_new_tokens": self.max_tokens,
             "return_full_text": False,
             "do_sample": True,
-            "top_k": 10,  # what does this do?
+            "top_k": 10,
         }
         response = self.pred.predict(payload)
 
