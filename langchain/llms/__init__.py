@@ -12,6 +12,7 @@ from langchain.llms.baseten import Baseten
 from langchain.llms.beam import Beam
 from langchain.llms.bedrock import Bedrock
 from langchain.llms.cerebriumai import CerebriumAI
+from langchain.llms.codewhisperer import CodeWhisperer
 from langchain.llms.cohere import Cohere
 from langchain.llms.ctransformers import CTransformers
 from langchain.llms.databricks import Databricks
