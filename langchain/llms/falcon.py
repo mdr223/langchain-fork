@@ -14,7 +14,7 @@ class Falcon(LLM):
     # 40b: falcon-40b-instruct-bf16-2023-07-03-17-06-57-631
     # ----
     # bedrock 7b: falcon-7b-instruct-bf16-2023-07-03-19-51-07-347
-    # bedrock 40b: TODO
+    # bedrock 40b: falcon-40b-instruct-bf16-2023-07-04-19-55-13-674
     model_name: str = Field("falcon-7b-instruct-bf16-2023-07-03-19-51-07-347", alias="model")
     """Model name to use."""
     max_tokens: int = 512
