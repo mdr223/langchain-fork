@@ -1,4 +1,4 @@
-from redshift_tests.fixtures import agent_chain
+from redshift_tests.fixtures import *
 
 
 class TestAgent:
