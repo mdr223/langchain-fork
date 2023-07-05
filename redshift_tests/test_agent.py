@@ -4,7 +4,7 @@ from redshift_tests.inputs import *
 from langchain.tools.aws import *
 
 import json
-import mock
+from unittest import mock
 
 class TestAgent:
 
