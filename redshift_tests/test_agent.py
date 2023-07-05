@@ -15,7 +15,7 @@ class TestAgent:
         # patch tool
         mocker.patch('langchain.tools.aws.CreateS3Bucket._run')
         _ = agent_chain.run(input="Please create a bucket called mrusso-test-bucket")
-        args, kwargs = mocker.call_args
+        args, kwargs = CreateS3Bucket._run.call_args
         print(args)
         print(kwargs)
         assert 0
