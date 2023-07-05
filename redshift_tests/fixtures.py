@@ -25,7 +25,7 @@ import boto3
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def tools_with_toolsearch():
     """Construct tools available to AI agent and include ToolSearch functionality."""
     tools = [
@@ -54,7 +54,7 @@ def tools_with_toolsearch():
     return tools
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def memory():
     return ConversationBufferMemory(memory_key="chat_history")
 
