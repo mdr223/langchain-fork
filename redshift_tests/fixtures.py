@@ -65,7 +65,7 @@ def memory():
         "text-davinci-002",
         "falcon-7b-instruct-bf16-2023-07-03-19-51-07-347",
         "falcon-40b-instruct-bf16-2023-07-04-19-55-13-674",
-        "codewhisperer",
+        # "codewhisperer",
         "amazon.titan-tg1-large",
     ]
 )
