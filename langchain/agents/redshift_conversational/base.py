@@ -20,6 +20,7 @@ from langchain.tools.base import BaseTool
 class RedshiftConversationalAgent(ToolSearchThenActionAgent):
     """An agent designed to hold a conversation in addition to using tools."""
 
+    # aws_account_id = None
     ai_prefix: str = "AI"
     output_parser: AgentOutputParser = Field(default_factory=RedshiftConvoOutputParser)
 
@@ -86,8 +87,8 @@ class RedshiftConversationalAgent(ToolSearchThenActionAgent):
             human_prefix=human_prefix,
             # max_iterations=max_iterations,
         )
-        # template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
-        template = "\n\n".join([prefix, format_instructions, suffix])
+        template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
+        # template = "\n\n".join([prefix, format_instructions, suffix])
         if input_variables is None:
             input_variables = ["input", "chat_history", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)

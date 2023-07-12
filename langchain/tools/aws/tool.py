@@ -17,11 +17,11 @@ import secrets
 import pandas as pd
 
 # DEFINITION
-# TODO: have AWS account ID read from env. variable
+# TODO: have AWS account ID fed into relevant tools
 # TODO: use utility to perform environment + setup check(s)
 # TODO: break into sub folders for subcommands (e.g. "iam/", "redshift/", "redshift-serverless/", etc.)
-AGENT_IAM_ROLE = "arn:aws:iam::518251513740:role/test-rollm-agent-role"
-USER_IAM_ROLE = "arn:aws:iam::518251513740:role/Admin"
+AGENT_IAM_ROLE = "arn:aws:iam::276726865914:role/redshift-llm-agent-role"
+USER_IAM_ROLE = "arn:aws:iam::276726865914:role/Admin"
 ASSUME_ROLE_POLICY_DOC = """{
     "Version": "2012-10-17",
     "Statement": [
@@ -29,7 +29,7 @@ ASSUME_ROLE_POLICY_DOC = """{
             "Sid": "",
             "Effect": "Allow",
             "Principal": {
-                "AWS": "arn:aws:iam::518251513740:root"
+                "AWS": "arn:aws:iam::276726865914:root"
             },
             "Action": "sts:AssumeRole"
         }
@@ -42,7 +42,7 @@ DEFAULT_BUCKET_POLICY = {
             "Sid": "DefaultBucketPermList",
             "Effect": "Allow",
             "Principal": {
-                "AWS": "arn:aws:iam::518251513740:root"
+                "AWS": "arn:aws:iam::276726865914:root"
             },
             "Action": "s3:ListBucket",
             "Resource": "arn:aws:s3:::REPLACE"
@@ -51,7 +51,7 @@ DEFAULT_BUCKET_POLICY = {
             "Sid": "DefaultBucketPermRW",
             "Effect": "Allow",
             "Principal": {
-                "AWS": "arn:aws:iam::518251513740:root"
+                "AWS": "arn:aws:iam::276726865914:root"
             },
             "Action": [
                 "s3:GetObject",
@@ -962,7 +962,7 @@ class LoadTableFromS3Serverless(AWSTool):
         # create database connection
         # - hostname format: workgroup-name.account-number.aws-region.redshift-serverless.amazonaws.com
         conn = redshift_connector.connect(
-            host=f"{input_kwargs['workgroupName']}.518251513740.us-east-1.redshift-serverless.amazonaws.com",
+            host=f"{input_kwargs['workgroupName']}.276726865914.us-east-1.redshift-serverless.amazonaws.com",
             database=input_kwargs['dbName'],
             user=input_kwargs['adminUsername'],
             password=input_kwargs['adminUserPassword'],
@@ -1095,7 +1095,7 @@ class SelectQueryDataFromTableServerless(AWSTool):
         # create database connection
         # - hostname format: workgroup-name.account-number.aws-region.redshift-serverless.amazonaws.com
         conn = redshift_connector.connect(
-            host=f"{workgroup_name}.518251513740.us-east-1.redshift-serverless.amazonaws.com",
+            host=f"{workgroup_name}.276726865914.us-east-1.redshift-serverless.amazonaws.com",
             database=input_kwargs['dbName'],
             user=input_kwargs['adminUsername'],
             password=input_kwargs['adminUserPassword'],
