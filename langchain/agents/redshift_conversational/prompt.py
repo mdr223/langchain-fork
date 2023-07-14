@@ -12,7 +12,11 @@ TOOLS:
 
 Assistant has access to the following tools:"""
 
-FORMAT_INSTRUCTIONS = """To use a tool, please use the following format:
+FORMAT_INSTRUCTIONS = """
+INSTRUCTIONS:
+-------------
+
+To use a tool, please use the following format:
 
 ```
 Thought: Do I need to take an action? Lookup
