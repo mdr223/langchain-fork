@@ -19,7 +19,7 @@ class TestAgent:
             (create_bucket_input_2, create_bucket_expected_2),
         ]
     )
-    def test_create_bucket(agent_chain, create_bucket_input, create_bucket_expected, mocker):
+    def test_create_bucket(self, agent_chain, create_bucket_input, create_bucket_expected, mocker):
         # patch tool
         mocker.patch('langchain.tools.aws.CreateS3Bucket._run')
 
