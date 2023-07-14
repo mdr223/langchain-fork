@@ -381,7 +381,12 @@ class CreateS3Bucket(AWSTool):
         except Exception as e:
             raise Exception("Failed to parse LLM input to CreateS3Bucket tool")
 
-        s3_client = boto3.client('s3')
+        # create S3 client
+        s3_client = (
+            boto3.client('s3')
+            if "CreateBucketConfiguration" not in create_bucket_kwargs and "LocationConstraint" not in create_bucket_kwargs["CreateBucketConfiguration"]
+            else boto3.client('s3', region_name=create_bucket_kwargs["CreateBucketConfiguration"]["LocationConstraint"])
+        )
 
         response = None
         try:
