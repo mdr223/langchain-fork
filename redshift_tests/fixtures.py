@@ -63,10 +63,10 @@ def memory():
     scope="class",
     params=[
         "text-davinci-002",
-        "falcon-7b-instruct-bf16-2023-07-03-19-51-07-347",
-        "falcon-40b-instruct-bf16-2023-07-04-19-55-13-674",
+        # "falcon-7b-instruct-bf16-2023-07-03-19-51-07-347",
+        # "falcon-40b-instruct-bf16-2023-07-04-19-55-13-674",
         # "codewhisperer",
-        "amazon.titan-tg1-large",
+        # "amazon.titan-tg1-large",
     ]
 )
 def agent_chain(tools_with_toolsearch, memory, request):
@@ -87,16 +87,6 @@ def agent_chain(tools_with_toolsearch, memory, request):
             endpoint_url='https://bedrock.us-east-1.amazonaws.com',
         )
         llm = Bedrock(model_id=llm_name, client=bedrock_client)
-
-    ### CodeWhisperer
-    elif "codewhisperer" in llm_name:
-        session = boto3.Session()
-        cw_client = session.client(
-            "codewhisperer",
-            endpoint_url="https://codewhisperer.us-east-1.amazonaws.com",
-            region_name="us-east-1",
-        )
-        llm = CodeWhisperer(client=cw_client)
 
     ### OpenAI
     else:

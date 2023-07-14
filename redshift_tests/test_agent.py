@@ -5,13 +5,21 @@ from langchain.tools.aws import *
 
 import json
 
+
 class TestAgent:
 
     def test_basic(self):
         assert True
 
     # @mock.patch('langchain.tools.aws.CreateS3Bucket._run')
-    def test_create_bucket(self, agent_chain, create_bucket_input_1, create_bucket_expected_1, mocker):
+    @pytest.mark.parameterize(
+        "create_bucket_input,create_bucket_expected",
+        [
+            (create_bucket_input_1, create_bucket_expected_1),
+            (create_bucket_input_2, create_bucket_expected_2),
+        ]
+    )
+    def test_create_bucket(self, agent_chain, create_bucket_input, create_bucket_expected, mocker):
         # patch tool
         mocker.patch('langchain.tools.aws.CreateS3Bucket._run')
 
@@ -23,3 +31,4 @@ class TestAgent:
         tool_input_str = tool_input_str.strip().strip('`').strip('>')
 
         assert json.loads(tool_input_str) == create_bucket_expected_1
+
