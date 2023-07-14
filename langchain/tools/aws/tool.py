@@ -348,12 +348,12 @@ class CreateS3Bucket(AWSTool):
     }
     ```
 
-    As another example, if you wanted to create the S3 Bucket `MyBucket` in us-west-2 you would generate the JSON:
+    As another example, if you wanted to create the S3 Bucket `MyBucket` in us-east-2 you would generate the JSON:
     ```
     {
         "Bucket": "MyBucket",
         "CreateBucketConfiguration": {
-            "LocationConstraint": "us-west-2"
+            "LocationConstraint": "us-east-2"
         }
     }
     ```
