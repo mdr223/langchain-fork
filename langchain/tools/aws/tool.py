@@ -331,11 +331,11 @@ class CreateS3Bucket(AWSTool):
         "ObjectOwnership": "BucketOwnerPreferred"|"ObjectWriter"|"BucketOwnerEnforced"
     }
     ```
-    The following dictionary keys are *REQUIRED*: `Bucket`
+    The following dictionary keys are *REQUIRED*: `Bucket`, `CreateBucketConfiguration`
 
     All other dictionary keys are optional.
     
-    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate. If a user does not specify which region to create a bucket in, use us-east-2.
 
     JSON values inside of `` are meant to be filled by the agent.
     JSON values separated by | represent the unique set of values that may used.
@@ -344,16 +344,19 @@ class CreateS3Bucket(AWSTool):
     For example, if you wanted to create the S3 bucket `MyBucket` you would generate the JSON:
     ```
     {
-        "Bucket": "MyBucket"
+        "Bucket": "MyBucket",
+        "CreateBucketConfiguration": {
+            "LocationConstraint": "us-east-2"
+        }
     }
     ```
 
-    As another example, if you wanted to create the S3 Bucket `MyBucket` in us-east-2 you would generate the JSON:
+    As another example, if you wanted to create the S3 Bucket `MyBucket` in us-west-2 you would generate the JSON:
     ```
     {
         "Bucket": "MyBucket",
         "CreateBucketConfiguration": {
-            "LocationConstraint": "us-east-2"
+            "LocationConstraint": "us-west-2"
         }
     }
     ```
