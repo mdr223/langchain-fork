@@ -6,29 +6,29 @@ from langchain.tools.aws import *
 import json
 
 
-# class TestAgent:
+class TestAgent:
 
-#     def test_basic(self):
-#         assert True
+    def test_basic(self):
+        assert True
 
-# @mock.patch('langchain.tools.aws.CreateS3Bucket._run')
-@pytest.mark.parameterize(
-    "create_bucket_input,create_bucket_expected",
-    [
-        (create_bucket_input_1, create_bucket_expected_1),
-        (create_bucket_input_2, create_bucket_expected_2),
-    ]
-)
-def test_create_bucket(agent_chain, create_bucket_input, create_bucket_expected, mocker):
-    # patch tool
-    mocker.patch('langchain.tools.aws.CreateS3Bucket._run')
+    # @mock.patch('langchain.tools.aws.CreateS3Bucket._run')
+    @pytest.mark.parametrize(
+        "create_bucket_input,create_bucket_expected",
+        [
+            (create_bucket_input_1, create_bucket_expected_1),
+            (create_bucket_input_2, create_bucket_expected_2),
+        ]
+    )
+    def test_create_bucket(agent_chain, create_bucket_input, create_bucket_expected, mocker):
+        # patch tool
+        mocker.patch('langchain.tools.aws.CreateS3Bucket._run')
 
-    # execute agent given input
-    _ = agent_chain.run(input=create_bucket_input_1)
+        # execute agent given input
+        _ = agent_chain.run(input=create_bucket_input_1)
 
-    # fetch input string to mocked tool and assert that it is expected
-    tool_input_str = CreateS3Bucket._run.call_args.args[0]
-    tool_input_str = tool_input_str.strip().strip('`').strip('>')
+        # fetch input string to mocked tool and assert that it is expected
+        tool_input_str = CreateS3Bucket._run.call_args.args[0]
+        tool_input_str = tool_input_str.strip().strip('`').strip('>')
 
-    assert json.loads(tool_input_str) == create_bucket_expected_1
+        assert json.loads(tool_input_str) == create_bucket_expected_1
 
