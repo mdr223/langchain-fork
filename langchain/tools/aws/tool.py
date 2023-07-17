@@ -198,12 +198,45 @@ class CreateIAMRole(AWSTool):
     """Create an IAM role in the user's AWS account with the given name."""
 
     name = "Create AWS IAM role"
-    description = (
-        "This tool creates an IAM role in the user's account with the name provided to the tool."
-        " The input to this tool should be the name of the IAM role you wish to create."
-        " For example, `MyRole` would be the input if you wanted to create the IAM role `MyRole`."
-        " The tool outputs a message indicating the success or failure of the create role operation."
-    )
+ 
+    # NOTE: removed {"AssumeRolePolicyDocument": "string",} from tool input
+    description = """This tool creates an IAM role in the user's account with the name provided to the tool.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "RoleName": "`role_name`",
+        "Path": "string",
+        "Description": "string",
+        "MaxSessionDuration": 123,
+        "PermissionsBoundary": "string",
+        "Tags": [
+            {
+                "Key": "string",
+                "Value": "string"
+            },
+        ]
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `RoleName`
+
+    All other dictionary keys are optional.
+    
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to create the IAM role `MyRole` you would generate the JSON:
+    ```
+    {
+        "RoleName": "MyRole"
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the create IAM role operation.
+    """
 
     @property
     def short_description(self) -> str:
@@ -211,19 +244,23 @@ class CreateIAMRole(AWSTool):
 
     def _run(
         self,
-        role_name: str,
+        create_role_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        # parse JSON
+        create_role_kwargs = None
+        try:
+            create_role_kwargs = json.loads(create_role_json.strip().strip('`').strip('>'))
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to CreateIAMRole tool")
+
         iam_client = boto3.client('iam')
 
         response = None
         try:
-            _ = iam_client.create_role(
-                RoleName=role_name,
-                AssumeRolePolicyDocument=ASSUME_ROLE_POLICY_DOC,
-                Description='LLM agent created role',
-            )
+            create_role_kwargs["AssumeRolePolicyDocument"] = ASSUME_ROLE_POLICY_DOC
+            _ = iam_client.create_role(**create_role_kwargs)
             response = f"Successfully created role {role_name}."
 
         except Exception as e:
@@ -377,7 +414,7 @@ class CreateS3Bucket(AWSTool):
         # parse JSON
         create_bucket_kwargs = None
         try:
-            create_bucket_kwargs = json.loads(create_bucket_json.strip().strip('`'))
+            create_bucket_kwargs = json.loads(create_bucket_json.strip().strip('`').strip('>'))
         except Exception as e:
             raise Exception("Failed to parse LLM input to CreateS3Bucket tool")
 
