@@ -16,11 +16,16 @@ class TestAgent:
         "create_bucket_input,create_bucket_expected",
         [
             (CREATE_BUCKET_INPUT_1, CREATE_BUCKET_EXPECTED_1),
-            # (CREATE_BUCKET_INPUT_2, CREATE_BUCKET_EXPECTED_2),
-            # (CREATE_BUCKET_INPUT_3, CREATE_BUCKET_EXPECTED_3),
+            (CREATE_BUCKET_INPUT_2, CREATE_BUCKET_EXPECTED_2),
+            (CREATE_BUCKET_INPUT_3, CREATE_BUCKET_EXPECTED_3),
+        ],
+        ids=[
+            'create_bucket_test_1',
+            'create_bucket_test_2',
+            'create_bucket_test_3',
         ]
     )
-    def test_create_bucket(self, agent_chain, tools_with_toolsearch, create_bucket_input, create_bucket_expected, mocker):
+    def test_create_bucket(self, agent_chain, create_bucket_input, create_bucket_expected, mocker):
         # # patch tool
         # mocker.patch('langchain.tools.aws.CreateS3Bucket._run')
 
@@ -37,7 +42,7 @@ class TestAgent:
         assert len(matching_buckets) == 1
 
         # tear down
-        _ = run_sh(f"aws s3 delete-bucket --bucket {bucket_name} --region {region}")
+        _ = run_sh(f"aws s3api delete-bucket --bucket {bucket_name} --region {region}")
 
         # # fetch input string to mocked tool and assert that it is expected
         # tool_input_str = CreateS3Bucket._run.call_args.args[0]
