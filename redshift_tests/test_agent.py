@@ -24,15 +24,6 @@ class TestAgent:
         # # patch tool
         # mocker.patch('langchain.tools.aws.CreateS3Bucket._run')
 
-        # print the full prompt
-        print(agent_chain.agent.create_prompt(tools=tools_with_toolsearch).template)
-        print("-------------")
-        print("-------------")
-        print("-------------")
-        print("-------------")
-        print("-------------")
-        print(f"INPUT: {create_bucket_input}")
-
         # execute agent given input
         _ = agent_chain.run(input=create_bucket_input)
 
