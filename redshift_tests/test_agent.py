@@ -34,7 +34,7 @@ class TestAgent:
 
         # run command to see if command created S3 bucket
         bucket_name, region = create_bucket_expected
-        _, stdout, _ = run_sh(f"aws s3api list-buckets --region {region}")
+        _, stdout, _ = run_sh(f"aws s3api list-buckets --region {region}", silent=True)
 
         # parse stdout and check for bucket
         buckets = json.loads(stdout)
@@ -42,7 +42,7 @@ class TestAgent:
         assert len(matching_buckets) == 1
 
         # tear down
-        _ = run_sh(f"aws s3api delete-bucket --bucket {bucket_name} --region {region}")
+        _ = run_sh(f"aws s3api delete-bucket --bucket {bucket_name} --region {region}", silent=True)
 
         # # fetch input string to mocked tool and assert that it is expected
         # tool_input_str = CreateS3Bucket._run.call_args.args[0]
@@ -70,7 +70,7 @@ class TestAgent:
 
         # run command to see if command created S3 bucket
         role_name, description = create_iam_role_expected
-        _, stdout, _ = run_sh(f"aws iam list-roles")
+        _, stdout, _ = run_sh(f"aws iam list-roles", silent=True)
 
         # parse stdout and check for bucket
         roles = json.loads(stdout)
@@ -81,4 +81,4 @@ class TestAgent:
         else:
             assert matching_roles[0]["Description"] == description
 
-        _ = run_sh(f"aws iam delete-role --role-name {role_name}")
+        _ = run_sh(f"aws iam delete-role --role-name {role_name}", silent=True)

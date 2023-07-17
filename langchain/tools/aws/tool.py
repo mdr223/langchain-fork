@@ -261,7 +261,7 @@ class CreateIAMRole(AWSTool):
         try:
             create_role_kwargs["AssumeRolePolicyDocument"] = ASSUME_ROLE_POLICY_DOC
             _ = iam_client.create_role(**create_role_kwargs)
-            response = f"Successfully created role {role_name}."
+            response = f"Successfully created role {create_role_kwargs['RoleName']}."
 
         except Exception as e:
             response = e
