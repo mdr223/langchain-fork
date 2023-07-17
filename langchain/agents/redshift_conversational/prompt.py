@@ -24,7 +24,7 @@ Tools: a comma separated list of one or more tool names, each tool name should b
 Tool Descriptions: the descriptions of each of the tools you list
 Thought: Do I need to take an action? Yes
 Action: the action to take, should be one of [{tool_names}]
-Action Input: the input to the action
+Action Input: the JSON input to the action
 Observation: the result of the action
 ```
 
@@ -39,7 +39,7 @@ Tools: `SomeToolC`
 Tool Descriptions: the description of `SomeToolC`
 Thought: Do I need to take an action? Yes
 Action: the action to take, should be one of [`SomeToolA`,`SomeToolB`,`SomeToolC`]
-Action Input: the input to the action
+Action Input: the JSON input to the action
 Observation: the result of the action
 ```
 
