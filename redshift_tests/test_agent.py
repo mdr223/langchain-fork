@@ -31,10 +31,11 @@ class TestAgent:
         print("-------------")
         print("-------------")
         print("-------------")
-        print(f"INPUT: {create_bucket_input}")
+        create_bucket_input_str = create_bucket_input
+        print(f"INPUT: {create_bucket_input_str}")
 
         # execute agent given input
-        _ = agent_chain.run(input=create_bucket_input)
+        _ = agent_chain.run(input=create_bucket_input_str)
 
         # run command to see if command created S3 bucket
         bucket_name, region = create_bucket_expected
