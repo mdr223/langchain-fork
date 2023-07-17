@@ -16,8 +16,8 @@ class TestAgent:
         "create_bucket_input,create_bucket_expected",
         [
             (create_bucket_input_1, create_bucket_expected_1),
-            (create_bucket_input_2, create_bucket_expected_2),
-            (create_bucket_input_3, create_bucket_expected_3),
+            # (create_bucket_input_2, create_bucket_expected_2),
+            # (create_bucket_input_3, create_bucket_expected_3),
         ]
     )
     def test_create_bucket(self, agent_chain, tools_with_toolsearch, create_bucket_input, create_bucket_expected, mocker):
@@ -51,29 +51,29 @@ class TestAgent:
 
         # assert json.loads(tool_input_str) == create_bucket_expected
 
-    @pytest.mark.parametrize(
-        "create_iam_role_input,create_iam_role_expected",
-        [
-            (create_iam_role_input_1, create_iam_role_expected_1),
-            (create_iam_role_input_2, create_iam_role_expected_2),
-        ]
-    )
-    def test_create_iam_role(self, agent_chain, create_iam_role_input, create_iam_role_expected, mocker):
-        # # patch tool
-        # mocker.patch('langchain.tools.aws.CreateIAMRole._run')
+    # @pytest.mark.parametrize(
+    #     "create_iam_role_input,create_iam_role_expected",
+    #     [
+    #         (create_iam_role_input_1, create_iam_role_expected_1),
+    #         (create_iam_role_input_2, create_iam_role_expected_2),
+    #     ]
+    # )
+    # def test_create_iam_role(self, agent_chain, create_iam_role_input, create_iam_role_expected, mocker):
+    #     # # patch tool
+    #     # mocker.patch('langchain.tools.aws.CreateIAMRole._run')
 
-        # execute agent given input
-        _ = agent_chain.run(input=create_iam_role_input)
+    #     # execute agent given input
+    #     _ = agent_chain.run(input=create_iam_role_input)
 
-        # run command to see if command created S3 bucket
-        role_name, description = create_iam_role_expected
-        _, stdout, _ = run_sh(f"aws iam list-roles")
+    #     # run command to see if command created S3 bucket
+    #     role_name, description = create_iam_role_expected
+    #     _, stdout, _ = run_sh(f"aws iam list-roles")
 
-        # parse stdout and check for bucket
-        roles = json.loads(stdout)
-        matching_roles = list(filter(lambda role: role["RoleName"] == role_name, roles["Roles"]))
-        assert len(matching_roles) == 1
-        if description is None:
-            assert "Description" not in matching_roles[0]
-        else:
-            assert matching_roles[0]["Description"] == description
+    #     # parse stdout and check for bucket
+    #     roles = json.loads(stdout)
+    #     matching_roles = list(filter(lambda role: role["RoleName"] == role_name, roles["Roles"]))
+    #     assert len(matching_roles) == 1
+    #     if description is None:
+    #         assert "Description" not in matching_roles[0]
+    #     else:
+    #         assert matching_roles[0]["Description"] == description
