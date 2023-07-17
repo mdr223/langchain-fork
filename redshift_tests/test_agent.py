@@ -31,14 +31,13 @@ class TestAgent:
         print("-------------")
         print("-------------")
         print("-------------")
-        create_bucket_input_str = create_bucket_input()
-        print(f"INPUT: {create_bucket_input_str}")
+        print(f"INPUT: {create_bucket_input}")
 
         # execute agent given input
-        _ = agent_chain.run(input=create_bucket_input_str)
+        _ = agent_chain.run(input=create_bucket_input)
 
         # run command to see if command created S3 bucket
-        bucket_name, region = create_bucket_expected()
+        bucket_name, region = create_bucket_expected
         _, stdout, _ = run_sh(f"aws s3api list-buckets --region {region}")
 
         # parse stdout and check for bucket
