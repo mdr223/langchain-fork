@@ -15,9 +15,9 @@ class TestAgent:
     @pytest.mark.parametrize(
         "create_bucket_input,create_bucket_expected",
         [
-            (create_bucket_input_1, create_bucket_expected_1),
-            # (create_bucket_input_2, create_bucket_expected_2),
-            # (create_bucket_input_3, create_bucket_expected_3),
+            (CREATE_BUCKET_INPUT_1, CREATE_BUCKET_EXPECTED_1),
+            # (CREATE_BUCKET_INPUT_2, CREATE_BUCKET_EXPECTED_2),
+            # (CREATE_BUCKET_INPUT_3, CREATE_BUCKET_EXPECTED_3),
         ]
     )
     def test_create_bucket(self, agent_chain, tools_with_toolsearch, create_bucket_input, create_bucket_expected, mocker):
@@ -46,6 +46,9 @@ class TestAgent:
         matching_buckets = list(filter(lambda bucket: bucket["Name"] == bucket_name, buckets["Buckets"]))
         assert len(matching_buckets) == 1
 
+        # tear down
+        _ = run_sh(f"aws s3 delete-bucket --bucket {bucket_name} --region {region}")
+
         # # fetch input string to mocked tool and assert that it is expected
         # tool_input_str = CreateS3Bucket._run.call_args.args[0]
         # tool_input_str = tool_input_str.strip().strip('`').strip('>')
@@ -55,8 +58,8 @@ class TestAgent:
     # @pytest.mark.parametrize(
     #     "create_iam_role_input,create_iam_role_expected",
     #     [
-    #         (create_iam_role_input_1, create_iam_role_expected_1),
-    #         (create_iam_role_input_2, create_iam_role_expected_2),
+    #         (CREATE_IAM_ROLE_INPUT_1, CREATE_IAM_ROLE_EXPECTED_1),
+    #         (CREATE_IAM_ROLE_INPUT_2, CREATE_IAM_ROLE_EXPECTED_2),
     #     ]
     # )
     # def test_create_iam_role(self, agent_chain, create_iam_role_input, create_iam_role_expected, mocker):
@@ -78,3 +81,5 @@ class TestAgent:
     #         assert "Description" not in matching_roles[0]
     #     else:
     #         assert matching_roles[0]["Description"] == description
+
+    #     _ = run_sh(f"aws iam delete-role --role-name {role_name}")
