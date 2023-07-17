@@ -31,6 +31,7 @@ class TestAgent:
         print("-------------")
         print("-------------")
         print("-------------")
+        print(f"INPUT: {create_bucket_input}")
 
         # execute agent given input
         _ = agent_chain.run(input=create_bucket_input)
