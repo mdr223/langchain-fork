@@ -22,7 +22,8 @@ class RedshiftConvoOutputParser(AgentOutputParser):
         # handle tool search
         if "Tools:" in text:
             try:
-                tools = text.split("Tools:")[-1]
+                # get text after "Tools:", but before newline
+                tools = text.split("Tools:")[-1].split("\n")[0]
                 return AgentAction("ToolSearch", tools.strip(" ").strip('"'), text)
             except:
                 raise OutputParserException(f"Could not parse LLM output: `{text}`")

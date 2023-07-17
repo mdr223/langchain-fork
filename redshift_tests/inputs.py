@@ -21,5 +21,5 @@ CREATE_BUCKET_EXPECTED_3 = "mrusso-test-bucket3", "us-east-2"
 CREATE_IAM_ROLE_INPUT_1 = "Please create an IAM role called mrusso-test-role1"
 CREATE_IAM_ROLE_EXPECTED_1 = "mrusso-test-role1", None
 
-CREATE_IAM_ROLE_INPUT_2 = "Please create an IAM role called mrusso-test-role1 with the description 'testing 123'"
+CREATE_IAM_ROLE_INPUT_2 = "Please create an IAM role called mrusso-test-role2 with the description 'testing 123'"
 CREATE_IAM_ROLE_EXPECTED_2 = "mrusso-test-role2", "testing 123"
