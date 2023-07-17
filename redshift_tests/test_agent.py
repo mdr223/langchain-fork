@@ -20,12 +20,12 @@ class TestAgent:
             (create_bucket_input_3, create_bucket_expected_3),
         ]
     )
-    def test_create_bucket(self, agent_chain, create_bucket_input, create_bucket_expected, mocker):
+    def test_create_bucket(self, agent_chain, tools_with_toolsearch, create_bucket_input, create_bucket_expected, mocker):
         # # patch tool
         # mocker.patch('langchain.tools.aws.CreateS3Bucket._run')
 
         # print the full prompt
-        print(agent_chain.agent.create_prompt(tools=tools).template)
+        print(agent_chain.agent.create_prompt(tools=tools_with_toolsearch).template)
         print("-------------")
         print("-------------")
         print("-------------")
