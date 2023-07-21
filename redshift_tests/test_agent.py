@@ -5,6 +5,7 @@ from redshift_tests.shell import run_sh
 from langchain.tools.aws import *
 
 import json
+import re
 
 
 class TestAgent:
@@ -92,7 +93,7 @@ class TestAgent:
             'attach_iam_policy_test_2',
         ]
     )
-    def test_attach_iam_policy(self, agent_chain, attach_iam_policy_input, attach_iam_policy_expected, mocker):
+    def test_attach_iam_policy(self, agent_chain, attach_iam_policy_input, attach_iam_policy_expected):
         # execute agent given input
         _ = agent_chain.run(input=attach_iam_policy_input)
 
@@ -110,3 +111,95 @@ class TestAgent:
 
         # remove policy from role
         _ = run_sh(f"aws iam delete-role-policy --role-name {role_name} --policy-name {policy_name}")
+
+    # NOTE: KMS keys cannot be deleted, so let's not do this
+    #
+    # @pytest.mark.parametrize(
+    #     "create_kms_key_input,create_kms_key_expected",
+    #     [
+    #         (CREATE_KMS_KEY_INPUT_1, CREATE_KMS_KEY_EXPECTED_1),
+    #         (CREATE_KMS_KEY_INPUT_2, CREATE_KMS_KEY_EXPECTED_2),
+    #     ],
+    #     ids=[
+    #         'create_kms_key_test_1',
+    #         'create_kms_key_test_2',
+    #     ]
+    # )
+    # def test_create_kms_key(self, agent_chain, create_kms_key_input, create_kms_key_expected):
+    #     # execute agent given input
+    #     output = agent_chain.run(input=create_kms_key_input)
+    #     kms_key_id = re.match("*`KeyId`: (.*)", output)
+    #     kms_key_id = kms_id.strip()
+
+    #     # run command to see if it created kms key
+    #     policy_name, role_name = create_kms_key_expected
+    #     _, stdout, _ = run_sh(f"aws kms list-keys", silent=True)
+
+    #     # assert that there wasn't an error
+    #     assert stdout != ""
+
+    #     # parse stdout and check for bucket
+    #     keys = json.loads(stdout)
+    #     key_ids = list(map(lambda key: key["KeyId"], keys["Keys"]))
+    #     assert kms_key_id in key_ids
+
+    #     # check KeySpec
+    #     _, stdout, _ = run_sh(f"aws kms describe-key --key-id {kms_key_id}")
+    #     kms_key_dict = json.loads(stdout)
+    #     assert kms_key_dict['KeyMetadata']['KeySpec'] == create_kms_key_expected
+
+    #     # delete key
+    #     _ = run_sh(f"aws iam delete-role-policy --role-name {role_name} --policy-name {policy_name}")
+
+    @pytest.mark.parametrize(
+        "create_redshift_cluster_input,create_redshift_cluster_expected",
+        [
+            (REDSHIFT_CLUSTER_INPUT_1, REDSHIFT_CLUSTER_EXPECTED_1),
+            (REDSHIFT_CLUSTER_INPUT_2, REDSHIFT_CLUSTER_EXPECTED_2),
+            (REDSHIFT_CLUSTER_INPUT_3, REDSHIFT_CLUSTER_EXPECTED_3),
+        ],
+        ids=[
+            'redshift_cluster_1',
+            'redshift_cluster_2',
+            'redshift_cluster_3',
+        ]
+    )
+    def test_redshift_cluster(self, agent_chain, redshift_cluster_input, redshift_cluster_expected):
+        # execute agent given input
+        create_redshift_cluster_input, delete_redshift_cluster_input = redshift_cluster_input
+
+        # run create cluster command
+        _ = agent_chain.run(input=create_redshift_cluster_input)
+
+        # wait for cluster to finish creating
+        _ = run_sh(f"aws redshift wait cluster-available --cluster-identifier {cluster_id}")
+
+        # run command to see if it created cluster
+        _, stdout, _ = run_sh(f"aws redshift describe-clusters", silent=True)
+
+        # assert that there wasn't an error
+        assert stdout != ""
+
+        # check that cluster is present and has correct configuration
+        cluster_id, node_type, num_nodes = redshift_cluster_expected
+        clusters = json.loads(stdout)
+        cluster = list(filter(lambda cluster: cluster['ClusterIdentifier'] == cluster_id, clusters['Clusters']))[0]
+        assert cluster['NodeType'] == node_type
+        assert cluster['NumberOfNodes'] == num_nodes
+
+        # run delete cluster command
+        _ = agent_chain.run(input=delete_redshift_cluster_input)
+
+        # wait for cluster to finish deleting
+        _ = run_sh(f"aws redshift wait cluster-deleted --cluster-identifier {cluster_id}")
+
+        # run command to see if it deleted cluster
+        _, stdout, _ = run_sh(f"aws redshift describe-clusters", silent=True)
+
+        # assert that there wasn't an error
+        assert stdout != ""
+
+        # check that cluster is present and has correct configuration
+        clusters = json.loads(stdout)
+        cluster_ids = list(map(lambda cluster: cluster['ClusterIdentifier'], clusters['Clusters']))
+        assert cluster_id not in cluster_ids

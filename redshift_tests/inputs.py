@@ -36,3 +36,24 @@ ATTACH_IAM_POLICY_EXPECTED_1 = "CloudWatchLogsFullAccess", "redshift-llm-agent-r
 ATTACH_IAM_POLICY_INPUT_2 = "Please attach CloudWatchLogsReadOnlyAccess to redshift-llm-agent-role"
 ATTACH_IAM_POLICY_EXPECTED_2 = "CloudWatchLogsReadOnlyAccess", "redshift-llm-agent-role"
 
+# NOTE: KMS keys cannot be deleted, so let's not do this
+# #########################################
+# ######## Create KMS Key input(s) ########
+# #########################################
+# CREATE_KMS_KEY_INPUT_1 = "Please create a KMS key."
+# CREATE_KMS_KEY_EXPECTED_1 = "SYMMETRIC_DEFAULT"
+
+# CREATE_KMS_KEY_INPUT_2 = "Please create a KMS key using RSA 3072."
+# CREATE_KMS_KEY_EXPECTED_2 = "RSA_3072"
+
+########################################################
+###### Create / Delete Redshift Cluster input(s) #######
+########################################################
+REDSHIFT_CLUSTER_INPUT_1 = ("Please create a redshift cluster called MRussoTestCluster1", "Please delete MRussoTestCluster1")
+REDSHIFT_CLUSTER_EXPECTED_1 = "MRussoTestCluster1", "ds2.xlarge", 2
+
+REDSHIFT_CLUSTER_INPUT_2 = ("Please create a single-node redshift cluster called MRussoSingleNodeTestCluster", "Please delete MRussoSingleNodeTestCluster")
+REDSHIFT_CLUSTER_EXPECTED_2 = "MRussoSingleNodeTestCluster", "ds2.xlarge", 1
+
+REDSHIFT_CLUSTER_INPUT_3 = ("Please create a redshift cluster called MRussoTestCluster2 with 3 nodes of type dc2.large.", "Please delete MRussoTestCluster2")
+REDSHIFT_CLUSTER_EXPECTED_3 = "MRussoTestCluster2", "dc2.large", 3
