@@ -152,7 +152,7 @@ class TestAgent:
     #     _ = run_sh(f"aws iam delete-role-policy --role-name {role_name} --policy-name {policy_name}")
 
     @pytest.mark.parametrize(
-        "create_redshift_cluster_input,create_redshift_cluster_expected",
+        "redshift_cluster_input,redshift_cluster_expected",
         [
             (REDSHIFT_CLUSTER_INPUT_1, REDSHIFT_CLUSTER_EXPECTED_1),
             (REDSHIFT_CLUSTER_INPUT_2, REDSHIFT_CLUSTER_EXPECTED_2),
