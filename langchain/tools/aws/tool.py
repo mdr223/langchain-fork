@@ -2,6 +2,8 @@
 from pydantic.fields import Field
 from typing import Dict, Optional
 
+# TODO: move this into langchain
+from redshift_tests.shell import run_sh
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -273,12 +275,35 @@ class AttachIAMPolicy(AWSTool):
     """Attach the given IAM policy to the given IAM role in the user's AWS account."""
 
     name = "Attach AWS IAM policy to AWS IAM role"
-    description = (
-        "This tool attaches the given IAM policy to the given IAM role."
-        " The input to this tool should be a comma separated list of strings of length two, representing the IAM policy you wish to attach and the IAM role you wish to attach it to."
-        " For example, `SomePolicy,SomeRole` would be the input if you wanted to attach the policy `SomePolicy` to the role `SomeRole`."
-        " The tool outputs a message indicating the success or failure of the attach policy operation."
-    )
+    description = """This tool attaches the given IAM policy to the given IAM role.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "RoleName": "`role_name`",
+        "PolicyArn": "`policy_arn`"
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `RoleName`, `PolicyArn`
+
+    All other dictionary keys are optional.
+
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to attch the IAM policy `SomePolicy` to the IAM role `MyRole` you would generate the JSON:
+    ```
+    {
+        "RoleName": "MyRole",
+        "PolicyArn": "arn:aws:iam::aws:policy/SomePolicy"
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the attach IAM policy operation.
+    """
 
     @property
     def short_description(self) -> str:
@@ -286,14 +311,14 @@ class AttachIAMPolicy(AWSTool):
 
     def _run(
         self,
-        policy_and_role_name: str,
+        attach_policy_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        # parse policy_name and role_name
+        # parse JSON
+        attach_policy_kwargs = None
         try:
-            policy_name = policy_and_role_name.split(',')[0]
-            role_name = policy_and_role_name.split(',')[1]
+            attach_policy_kwargs = json.loads(attach_policy_json.strip().strip('`').strip('>'))
         except Exception as e:
             raise Exception("Failed to parse LLM input to AttachIAMPolicy tool")
 
@@ -301,11 +326,8 @@ class AttachIAMPolicy(AWSTool):
 
         response = None
         try:
-            _ = iam_client.attach_role_policy(
-                RoleName=role_name,
-                PolicyArn=f"arn:aws:iam::aws:policy/{policy_name}",
-            )
-            response = f"Successfully attached policy {policy_name} to role {role_name}."
+            _ = iam_client.attach_role_policy(**attach_policy_kwargs)
+            response = f"Successfully attached policy {attach_policy_kwargs['PolicyArn']} to role {attach_policy_kwargs['RoleName']}."
 
         except Exception as e:
             response = e
@@ -317,11 +339,52 @@ class CreateKMSKey(AWSTool):
     """Create key in Key Management Service in the user's AWS account."""
 
     name = "Create Key Management Service (KMS) key"
-    description = (
-        "This tool creates a KMS key."
-        " The tool takes no input."
-        " The tool outputs the `KeyId` of the key that it created."
-    )
+    description = """This tool creates a KMS key.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "Policy": "string",
+        "Description": "string",
+        "KeyUsage": "SIGN_VERIFY"|"ENCRYPT_DECRYPT"|"GENERATE_VERIFY_MAC",
+        "CustomerMasterKeySpec": "RSA_2048"|"RSA_3072"|"RSA_4096"|"ECC_NIST_P256"|"ECC_NIST_P384"|"ECC_NIST_P521"|"ECC_SECG_P256K1"|"SYMMETRIC_DEFAULT"|"HMAC_224"|"HMAC_256"|"HMAC_384"|"HMAC_512"|"SM2",
+        "KeySpec": "RSA_2048"|"RSA_3072"|"RSA_4096"|"ECC_NIST_P256"|"ECC_NIST_P384"|"ECC_NIST_P521"|"ECC_SECG_P256K1"|"SYMMETRIC_DEFAULT"|"HMAC_224"|"HMAC_256"|"HMAC_384"|"HMAC_512"|"SM2",
+        "Origin": "AWS_KMS"|"EXTERNAL"|"AWS_CLOUDHSM"|"EXTERNAL_KEY_STORE",
+        "CustomKeyStoreId": "string",
+        "BypassPolicyLockoutSafetyCheck": True|False,
+        "Tags": [
+            {
+                "TagKey": "string",
+                "TagValue": "string"
+            },
+        ],
+        "MultiRegion": True|False,
+        "XksKeyId": "string"
+    }
+    ```
+    All dictionary keys are optional.
+
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to create a KMS key with no custom arguments you generate the JSON:
+    ```
+    {}
+    ```
+
+    As another example, if you wanted to create a KMS key with a key policy called "SomePolicy" and an Asymmetric RSA key pair, then you could generate the JSON:
+    ```
+    {
+        "Policy": "arn:aws:iam::aws:policy/SomePolicy",
+        "KeySpec": "RSA_4096"
+    }
+    ```
+
+    The tool outputs the `KeyId` of the key that it created.
+    """
 
     @property
     def short_description(self) -> str:
@@ -329,15 +392,22 @@ class CreateKMSKey(AWSTool):
 
     def _run(
         self,
-        input: str,
+        create_kms_key_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        # parse JSON
+        create_kms_key_kwargs = None
+        try:
+            create_kms_key_kwargs = json.loads(create_kms_key_json.strip().strip('`').strip('>'))
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to CreateKMSKey tool")
+
         kms_client = boto3.client('kms')
 
         response = None
         try:
-            response = kms_client.create_key()
+            response = kms_client.create_key(**create_kms_key_kwargs)
             response = f"Successfully created KMS key with `KeyId`: {response['KeyId']}."
         except Exception as e:
             response = e
@@ -446,19 +516,114 @@ class CreateS3Bucket(AWSTool):
 class CreateRedshiftCluster(AWSTool):
     """Create a Redshift cluster in the user's AWS account."""
     name = "Create Redshift cluster"
-    description = (
-        "This tool creates a Redshift Cluster using the given `cluster_name` in the user's AWS account."
-        " The input to this tool should be a comma separated list of strings of length one, two, three, or four."
-        " If the input is of length one, the string represents the name of the cluster the user wishes to create."
-        " If the input is of length two, the second string represents the node type to be used in creating the cluster."
-        " If the input is of length three, the third string represents the number of nodes to be used in creating the cluster."
-        " If the input is of length four, the fourth string represents the security group ID to be used in creating the cluster."
-        " For example, `SomeCluster` would be the input if you wanted to create the cluster `SomeCluster`."
-        " As another example, `SomeCluster,ds2.xlarge` would be the input if you wanted to create a single-node cluster `SomeCluster` with the node type `ds2.xlarge`."
-        " As another example, `SomeCluster,ds2.xlarge,4` would be the input if you wanted to create a multi-node cluster `SomeCluster` with four nodes of node type `ds2.xlarge`."
-        " As another example, `SomeCluster,ds2.xlarge,4,sg-0a1b2c3d4e5f67890` would be the input if you wanted to create a multi-node cluster `SomeCluster` with four nodes of node type `ds2.xlarge` using the security group `sg-0a1b2c3d4e5f67890`."
-        " The tool outputs a message indicating the success or failure of the create cluster operation."
-    )
+    description = """This tool creates a Redshift Cluster using the given `cluster_name` in the user's AWS account.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "ClusterIdentifier": "`cluster_name`",
+        "NodeType": "ds2.xlarge"|"ds2.8xlarge"|"dc1.large"|"dc1.8xlarge"|"dc2.large"|"dc2.8xlarge"|"ra3.xlplus"|"ra3.4xlarge"|"ra3.16xlarge",
+        "MasterUsername": "`username`",
+        "MasterUserPassword": "`password`",
+        "ClusterType": "multi-node"|"single-node",
+        "NumberOfNodes": 123,
+        "DBName": "string",
+        "ClusterSecurityGroups": [
+            "string",
+        ],
+        "VpcSecurityGroupIds": [
+            "string",
+        ],
+        "ClusterSubnetGroupName": "string",
+        "AvailabilityZone": "string",
+        "PreferredMaintenanceWindow": "string",
+        "ClusterParameterGroupName": "string",
+        "AutomatedSnapshotRetentionPeriod": 123,
+        "ManualSnapshotRetentionPeriod": 123,
+        "Port": 123,
+        "ClusterVersion": "string",
+        "AllowVersionUpgrade": True|False,
+        "PubliclyAccessible": True|False,
+        "Encrypted": True|False,
+        "HsmClientCertificateIdentifier": "string",
+        "HsmConfigurationIdentifier": "string",
+        "ElasticIp": "string",
+        "Tags": [
+            {
+                "Key": "string",
+                "Value": "string"
+            },
+        ],
+        "KmsKeyId": "string",
+        "EnhancedVpcRouting": True|False,
+        "AdditionalInfo": "string",
+        "IamRoles": [
+            "string",
+        ],
+        "MaintenanceTrackName": "string",
+        "SnapshotScheduleIdentifier": "string",
+        "AvailabilityZoneRelocation": True|False,
+        "AquaConfigurationStatus": "enabled"|"disabled"|"auto",
+        "DefaultIamRoleArn": "string",
+        "LoadSampleData": "string"
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `ClusterIdentifier`, `NodeType`, `MasterUsername`, `MasterPassword`, `ClusterType`, and `NumberOfNodes`.
+
+    *DEFAULTS*:
+    If a user does not specify a `NodeType`, then use "ds2.xlarge".
+    If a user does not specify a `MasterUsername`, then use "admin".
+    If a user does not specify a `MasterPassword`, then use "adminpass".
+    If a user does not specify a `ClusterType`, then use "multi-node".
+    If a user does not specify a `NumberOfNodes`, AND `ClusterType` is "multi-node", then use 2.
+    If a user does not specify a `NumberOfNodes`, And `ClusterType` is "single-node", then use 1.
+
+    All other dictionary keys are optional.
+
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to create the cluster `MyCluster` you would generate the JSON:
+    ```
+    {
+        "ClusterIdentifier": "MyCluster",
+        "NodeType": "ds2.xlarge",
+        "MasterUsername": "admin",
+        "MasterPassword": "adminpass",
+        "ClusterType": "multi-node",
+        "NumberOfNodes": 2
+    }
+    ```
+
+    As another example, if you wanted to create a single-node cluster `MyCluster1` with the admin username "hello" and admin password "world" you would generate the JSON:
+    ```
+    {
+        "ClusterIdentifier": "MyCluster1",
+        "NodeType": "ds2.xlarge",
+        "MasterUsername": "hello",
+        "MasterPassword": "world",
+        "ClusterType": "single-node",
+        "NumberOfNodes": 1
+    }
+    ```
+
+    As another example, if you wanted to create a multi-node cluster `MyCluster2` with four ra3.xlplus nodes you would generate the JSON:
+    ```
+    {
+        "ClusterIdentifier": "MyCluster2",
+        "NodeType": "ra3.xlplus",
+        "MasterUsername": "admin",
+        "MasterPassword": "adminpass",
+        "ClusterType": "multi-node",
+        "NumberOfNodes": 4
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the create Redshift cluster operation.
+    """
 
     @property
     def short_description(self) -> str:
@@ -466,57 +631,38 @@ class CreateRedshiftCluster(AWSTool):
 
     def _run(
         self,
-        cluster_name_and_nodes: str,
+        create_cluster_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        # parse cluster_name and node_type (if provided)
-        cluster_name, node_type, num_nodes, security_group = None, None, None, None
+        # parse JSON
+        create_cluster_kwargs = None
         try:
-            if ',' in cluster_name_and_nodes:
-                args = cluster_name_and_nodes.split(',')
-                if len(args) == 2:
-                    cluster_name = args[0]
-                    node_type = args[1]
-                    num_nodes = 1
-                    security_group = create_redshift_security_group()
-                elif len(args) == 3:
-                    cluster_name = args[0]
-                    node_type = args[1]
-                    num_nodes = int(args[2])
-                    security_group = create_redshift_security_group()
-                elif len(args) == 4:
-                    cluster_name = args[0]
-                    node_type = args[1]
-                    num_nodes = int(args[2])
-                    security_group = args[3]
-            else:
-                cluster_name = cluster_name_and_nodes
-                node_type = "ds2.xlarge"
-                num_nodes = 1
-                security_group = create_redshift_security_group()
-
+            create_cluster_kwargs = json.loads(create_cluster_json.strip().strip('`').strip('>'))
         except Exception as e:
             raise Exception("Failed to parse LLM input to CreateRedshiftCluster tool")
 
         rs_client = boto3.client('redshift')
+        security_group = create_redshift_security_group()
+
+        # set some kwarg defaults
+        if "DBName" not in create_cluster_kwargs:
+            create_cluster_kwargs['DBName'] = DB_NAME
+
+        if "DefaultIamRoleArn" not in create_cluster_kwargs:
+            create_cluster_kwargs['DefaultIamRoleArn'] = AGENT_IAM_ROLE
+
+        if "IamRoles" not in create_cluster_kwargs:
+            user_iam_role = get_user_iam_role()
+            create_cluster_kwargs['IamRoles'] = [AGENT_IAM_ROLE, user_iam_role]
+
+        if "VpcSecurityGroupIds" not in create_cluster_kwargs:
+            create_cluster_kwargs['VpcSecurityGroupIds'] = [security_group]
 
         response = None
         try:
-            user_iam_role = get_user_iam_role()
-            _ = rs_client.create_cluster(
-                DBName=DB_NAME,
-                ClusterIdentifier=cluster_name,
-                ClusterType="multi-node" if num_nodes > 1 else "single-node",
-                NodeType=node_type,
-                NumberOfNodes=num_nodes,
-                MasterUsername=ADMIN_USERNAME,
-                MasterUserPassword=ADMIN_USER_PASSWORD,
-                DefaultIamRoleArn=AGENT_IAM_ROLE,
-                IamRoles=[AGENT_IAM_ROLE, user_iam_role],
-                VpcSecurityGroupIds=[security_group],
-            )
-            response = f"Successfully created Redshift cluster {cluster_name}."
+            _ = rs_client.create_cluster(**create_cluster_kwargs)
+            response = f"Successfully created Redshift cluster {create_cluster_kwargs['ClusterIdentifier']}."
         except Exception as e:
             response = e
 
@@ -527,15 +673,6 @@ class CreateRedshiftServerlessNamespace(AWSTool):
     """Create a namespace for Redshift Serverless in the user's AWS account."""
 
     name = "Create Redshift Serverless namespace"
-    # description = (
-    #     "This tool creates a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account."
-    #     " The input to this tool should be a comma separated list of strings of length one or length two."
-    #     " If the input is of length one, the string represents the name of the namespace the user wishes to create."
-    #     " If the input is of length two, the first string represents the name of the namespace and the second string represents the KMS KeyId to be used in creating the namespace."
-    #     " For example, `SomeNamespace` would be the input if you wanted to create the namespace `SomeNamespace`."
-    #     " As another example, `SomeNamespace,SomeKeyId` would be the input if you wanted to create the namespace `SomeNamespace` with the KMS key with KeyId `SomeKeyId`."
-    #     " The tool outputs a message indicating the success or failure of the create namespace operation."
-    # )
     description = """This tool creates a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -723,12 +860,40 @@ class DeleteRedshiftCluster(AWSTool):
     """Delete a cluster from Redshift in the user's AWS account."""
 
     name = "Delete Redshift cluster"
-    description = (
-        "This tool deletes a Redshift cluster using the given `cluster_name`."
-        " The input to this tool should be a string representing the name of the cluster you wish to delete (i.e. `cluster_name`)."
-        " For example, `SomeCluster` would be the input if you wanted to delete the cluster `SomeCluster`."
-        " The tool outputs a message indicating the success or failure of the delete cluster operation."
-    )
+    description = """This tool deletes a Redshift cluster using the given cluster identifier.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        ClusterIdentifier": "`cluster_name`",
+        SkipFinalClusterSnapshot": True|False,
+        FinalClusterSnapshotIdentifier": "string",
+        FinalClusterSnapshotRetentionPeriod": 123
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `ClusterIdentifier`
+
+    *DEFAULTS*:
+    If a user does not specify a `SkipFinalClusterSnapshot`, then use True.
+
+    All other dictionary keys are optional.
+
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to delete the cluster `MyCluster` you would generate the JSON:
+    ```
+    {
+        "ClusterIdentifier": "MyCluster",
+        "SkipFinalClusterSnapshot": True
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the delete Redshift cluster operation.
+    """
 
     @property
     def short_description(self) -> str:
@@ -736,20 +901,24 @@ class DeleteRedshiftCluster(AWSTool):
 
     def _run(
         self,
-        cluster_name: str,
+        delete_cluster_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
+        # parse JSON
+        delete_cluster_kwargs = None
+        try:
+            delete_cluster_kwargs = json.loads(delete_cluster_json.strip().strip('`').strip('>'))
+        except Exception as e:
+            raise Exception("Failed to parse LLM input to DeleteRedshiftCluster tool")
+
         rs_client = boto3.client('redshift')
 
         response = None
         try:
             # delete the cluster
-            _ = rs_client.delete_cluster(
-                ClusterIdentifier=cluster_name,
-                SkipFinalClusterSnapshot=True,
-            )
-            response = f"Successfully deleted Redshift cluster {cluster_name}."
+            _ = rs_client.delete_cluster(**delete_cluster_kwargs)
+            response = f"Successfully deleted Redshift cluster {delete_cluster_kwargs['ClusterIdentifier']}."
         except Exception as e:
             response = e
 
@@ -881,12 +1050,48 @@ class LoadTableFromS3Cluster(AWSTool):
     """Load a table from a parquet file or prefix in S3 into a Redshift Cluster."""
 
     name = "Load S3 table into Redshift cluster."
-    description = (
-        "This tool loads a database table from a (set of) parquet file(s) in S3 into a provisioned Redshift cluster."
-        " The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift cluster you wish to load the data into."
-        " For example, `s3://somebucket/someprefix/file.pq,SomeCluster` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the cluster `SomeCluster`."
-        " The tool outputs a message indicating the success or failure of the load table operation."
-    )
+    # description = (
+    #     "This tool loads a database table from a (set of) parquet file(s) in S3 into a provisioned Redshift cluster."
+    #     " The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift cluster you wish to load the data into."
+    #     " For example, `s3://somebucket/someprefix/file.pq,SomeCluster` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the cluster `SomeCluster`."
+    #     " The tool outputs a message indicating the success or failure of the load table operation."
+    # )
+    description = """This tool loads a database table from a (set of) parquet file(s) in S3 into a provisioned Redshift cluster.
+
+    The input to this tool should be a JSON dictionary object with the following format:
+    ```
+    {
+        "S3Key": "`s3_key_or_prefix`",
+        "clusterName": "`cluster_name`",
+        "adminUserPassword": "`password`",
+        "adminUsername": "`username`",
+        "dbName": "`db_name`"
+        "tableName": "string"
+    }
+    ```
+    The following dictionary keys are *REQUIRED*: `S3Key`, `clusterName`, `adminUserPassword`, `adminUsername`, `dbName`
+
+    All other dictionary keys are optional.
+
+    *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
+
+    JSON values inside of `` are meant to be filled by the agent.
+    JSON values separated by | represent the unique set of values that may used.
+    Otherwise, the data type of the value is shown.
+
+    For example, if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the cluster `SomeCluster` using the adminUsername `admin`, adminUserPassword `Testing123`, and database `dev` you would generate the JSON:
+    ```
+    {
+        "S3Key": "s3://somebucket/someprefix/file.pq",
+        "clusterName": "SomeCluster",
+        "adminUserPassword": "admin",
+        "adminUsername": "Testing123",
+        "dbName": "dev"
+    }
+    ```
+
+    The tool outputs a message indicating the success or failure of the load table operation.
+    """
 
     @property
     def short_description(self) -> str:
@@ -894,45 +1099,82 @@ class LoadTableFromS3Cluster(AWSTool):
 
     def _run(
         self,
-        input: str,
+        input_json: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        # parse s3_key_or_prefix and cluster_name from input
+        # parse JSON
+        input_kwargs = None
         try:
-            s3_key_or_prefix = input.split(',')[0]
-            cluster_name = input.split(',')[1]
+            input_kwargs = json.loads(input_json.strip().strip('`'))
         except Exception as e:
             raise Exception("Failed to parse LLM input to LoadTableFromS3Cluster tool")
 
-        # create database connection; TODO: fetch the `some-id` part dynamically
+        # fetch cluster endpoint
+        _, stdout, _ = run_sh("aws redshift describe-clusters --no-paginate")
+        clusters = json.loads(stdout)
+        cluster = list(filter(lambda cluster: cluster['ClusterIdentifier'] == input_kwargs['ClusterIdentifier'], clusters['Clusters']))[0]
+        endpoint = cluster['Endpoint']['Address']
+        port = int(cluster['Endpoint']['Port'])
+
+        # fill in kwargs
+        if "dbName" not in input_kwargs:
+            input_kwargs['dbName'] = DB_NAME
+
+        if "adminUsername" not in input_kwargs:
+            input_kwargs['adminUsername'] = ADMIN_USERNAME
+
+        if "adminUserPassword" not in input_kwargs:
+            input_kwargs['adminUserPassword'] = ADMIN_USER_PASSWORD
+
+        # create database connection
         # - hostname format: cluster-name.some-id.aws-region.redshift.amazonaws.com
         # - mrusso-cluster.chcgpkxl6sbm.us-east-1.redshift.amazonaws.com:5439/dev
         conn = redshift_connector.connect(
-            host=f"{cluster_name}.chcgpkxl6sbm.us-east-1.redshift.amazonaws.com",
-            database=DB_NAME,
-            user=ADMIN_USERNAME,
-            password=ADMIN_USER_PASSWORD,
+            # host=f"{cluster_name}.chcgpkxl6sbm.us-east-1.redshift.amazonaws.com",
+            host=endpoint,
+            database=input_kwargs['dbName'],
+            user=input_kwargs['adminUsername'],
+            password=input_kwargs['adminUserPassword'],
         )
         cursor = conn.cursor()
 
-        # try executing query to load table
-        # TODO: remove dummy values
-        create_table_cmd = """CREATE TABLE mini_table (
-            order_id INTEGER NOT NULL,
-            customer_id INTEGER NOT NULL,
-            product_id INTEGER NOT NULL,
-            amount INTEGER NOT NULL
-        );
-        """
-        copy_table_cmd = f"""COPY mini_table FROM '{s3_key_or_prefix}' IAM_ROLE '{AGENT_IAM_ROLE}' FORMAT AS parquet"""
+        # construct table name if none was provided
+        if 'tableName' not in input_kwargs:
+            # query for existing table names
+            tablename_query = """SELECT DISTINCT tablename FROM PG_TABLE_DEF WHERE schemaname = 'public';"""
+            cursor.execute(tablename_query)
+            results = cursor.fetchall()
+
+            # construct new table name
+            tablenames = list(map(lambda res: res[0], results))
+            table_idx = 0
+            while f"table_copied_from_s3_{table_idx}" not in tablenames:
+                table_idx += 1
+
+            # set table name
+            input_kwargs['tableName'] = f"table_copied_from_s3_{table_idx}"
+
+        # query table's schema
+        schema = pyarrow.parquet.read_schema(input_kwargs['S3Key'], memory_map=True)
+        schema = {column: PANDAS_TYPE_TO_REDSHIFT_TYPE[str(pa_dtype)] for column, pa_dtype in zip(schema.names, schema.types)}
+
+        # construct command to create table in Redshift
+        col_str = ""
+        for col, dtype in schema.items():
+            col_str += f"{col} {dtype},"
+
+        create_table_cmd = f"""CREATE TABLE {table_name} ({col_str[:-1]});"""
+
+        # command to copy table from S3 to Redshift
+        copy_table_cmd = f"""COPY {input_kwargs['tableName']} FROM '{input_kwargs['S3Key']}' IAM_ROLE '{AGENT_IAM_ROLE}' FORMAT AS parquet"""
 
         response = None
         try:
             cursor.execute(create_table_cmd)
             cursor.execute(copy_table_cmd)
             conn.commit()
-            response = f"Successfully created table mini_table in {cluster_name}."
+            response = f"Successfully created table mini_table in {input_kwargs['ClusterIdentifier']}."
         except Exception as e:
             response = e
 
@@ -943,12 +1185,6 @@ class LoadTableFromS3Serverless(AWSTool):
     """Load a table from a parquet file or prefix in S3 into Redshift Serverless."""
 
     name = "Load S3 table into Redshift Serverless workgroup"
-    # description = (
-    #     "This tool loads a database table from a (set of) parquet file(s) in S3 into a workgroup/database in Redshift Serverless."
-    #     " The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift Serverless workgroup you wish to load the data into."
-    #     " For example, `s3://somebucket/someprefix/file.pq,SomeWorkgroup` would be the input if you wanted to load the data from `s3://somebucket/someprefix/file.pq` into a database table in the workgroup `SomeWorkgroup`."
-    #     " The tool outputs a message indicating the success or failure of the load table operation."
-    # )
     description = """This tool loads a database table from a (set of) parquet file(s) in S3 into a workgroup/database in Redshift Serverless.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -965,7 +1201,7 @@ class LoadTableFromS3Serverless(AWSTool):
     The following dictionary keys are *REQUIRED*: `S3Key`, `workgroupName`, `adminUserPassword`, `adminUsername`, `dbName`
 
     All other dictionary keys are optional.
-    
+
     *IMPORTANT*: If a user's request does not explicitly or implicitly instruct you how to set an optional key, then simply omit that key from the JSON you generate.
 
     JSON values inside of `` are meant to be filled by the agent.
@@ -1002,6 +1238,16 @@ class LoadTableFromS3Serverless(AWSTool):
             input_kwargs = json.loads(input_json.strip().strip('`'))
         except Exception as e:
             raise Exception("Failed to parse LLM input to LoadTableFromS3Serverless tool")
+
+        # fill in kwargs
+        if "dbName" not in input_kwargs:
+            input_kwargs['dbName'] = DB_NAME
+
+        if "adminUsername" not in input_kwargs:
+            input_kwargs['adminUsername'] = ADMIN_USERNAME
+
+        if "adminUserPassword" not in input_kwargs:
+            input_kwargs['adminUserPassword'] = ADMIN_USER_PASSWORD
 
         # TODO: think through secure way to provide DB credentials
         # create database connection
@@ -1060,15 +1306,6 @@ class SelectQueryDataFromTableServerless(AWSTool):
     """Perform a select query on a specified table in Redshift."""
 
     name = "Run select query on Redshift Serverless table"
-    # description = (
-    #     "This tool runs a select query on a given table in Redshift Serverless."
-    #     " The input to this tool should be a comma separated list of strings."
-    #     " The first string represents the name of the workgroup the table lives in."
-    #     " The second string represents the name of the table to query."
-    #     " All subsequent strings represent the names of columns to query from the table."
-    #     " For example, `SomeWorkgroup,SomeTable,ColumnA,ColumnB` would be the input if you wanted to query the columns `ColumnA` and `ColumnB` from the table `SomeTable` in the workgroup `SomeWorkgroup`."
-    #     " The tool outputs a message indicating the success or failure of the query operation."
-    # )
     description = """This tool runs a select query on a given table in Redshift Serverless.
 
     The input to this tool should be a JSON dictionary object with the following format:

@@ -25,7 +25,7 @@ class TestAgent:
             'create_bucket_test_3',
         ]
     )
-    def test_create_bucket(self, agent_chain, create_bucket_input, create_bucket_expected, mocker):
+    def test_create_bucket(self, agent_chain, create_bucket_input, create_bucket_expected):
         # # patch tool
         # mocker.patch('langchain.tools.aws.CreateS3Bucket._run')
 
@@ -50,6 +50,7 @@ class TestAgent:
 
         # assert json.loads(tool_input_str) == create_bucket_expected
 
+
     @pytest.mark.parametrize(
         "create_iam_role_input,create_iam_role_expected",
         [
@@ -61,24 +62,51 @@ class TestAgent:
             'create_iam_role_test_2',
         ]
     )
-    def test_create_iam_role(self, agent_chain, create_iam_role_input, create_iam_role_expected, mocker):
-        # # patch tool
-        # mocker.patch('langchain.tools.aws.CreateIAMRole._run')
-
+    def test_create_iam_role(self, agent_chain, create_iam_role_input, create_iam_role_expected):
         # execute agent given input
         _ = agent_chain.run(input=create_iam_role_input)
 
-        # run command to see if command created S3 bucket
+        # run command to see if command created IAM role
         role_name, description = create_iam_role_expected
-        _, stdout, _ = run_sh(f"aws iam list-roles", silent=True)
+        # _, stdout, _ = run_sh(f"aws iam list-roles", silent=True)
+        _, stdout, _ = run_sh(f"aws iam get-role --role-name {role_name}", silent=True)
 
-        # parse stdout and check for bucket
-        roles = json.loads(stdout)
-        matching_roles = list(filter(lambda role: role["RoleName"] == role_name, roles["Roles"]))
-        assert len(matching_roles) == 1
-        if description is None:
-            assert "Description" not in matching_roles[0]
-        else:
-            assert matching_roles[0]["Description"] == description
+        # assert that there wasn't an error
+        assert stdout != ""
+
+        # assert that the description matches
+        role = json.loads(stdout)
+        assert role['Role']['Description'] == description
 
         _ = run_sh(f"aws iam delete-role --role-name {role_name}", silent=True)
+
+
+    @pytest.mark.parametrize(
+        "attach_iam_policy_input,attach_iam_policy_expected",
+        [
+            (ATTACH_IAM_POLICY_INPUT_1, ATTACH_IAM_POLICY_EXPECTED_1),
+            (ATTACH_IAM_POLICY_INPUT_2, ATTACH_IAM_POLICY_EXPECTED_2),
+        ],
+        ids=[
+            'attach_iam_policy_test_1',
+            'attach_iam_policy_test_2',
+        ]
+    )
+    def test_attach_iam_policy(self, agent_chain, attach_iam_policy_input, attach_iam_policy_expected, mocker):
+        # execute agent given input
+        _ = agent_chain.run(input=attach_iam_policy_input)
+
+        # run command to see if it attached iam policy to role
+        policy_name, role_name = attach_iam_policy_expected
+        _, stdout, _ = run_sh(f"aws iam list-attached-role-policies --role-name {role_name}", silent=True)
+
+        # assert that there wasn't an error
+        assert stdout != ""
+
+        # parse stdout and check for bucket
+        policies = json.loads(stdout)
+        policy_names = list(map(lambda policy: policy["PolicyName"], policies["AttachedPolicies"]))
+        assert policy_name in policy_names
+
+        # remove policy from role
+        _ = run_sh(f"aws iam delete-role-policy --role-name {role_name} --policy-name {policy_name}")
