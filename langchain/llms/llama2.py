@@ -17,9 +17,9 @@ class Llama2(LLM):
     """Model name to use."""
     max_new_tokens: int = 4096
     """The maximum number of tokens to generate in the completion."""
-    model = None  #: :meta private:
+    model: Any = None  #: :meta private:
     """LLM model object."""
-    tokenizer = None
+    tokenizer: Any = None
     """LLM tokenizer object."""
 
     @root_validator()
