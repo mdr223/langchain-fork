@@ -6,6 +6,115 @@ from langchain.tools.aws import *
 
 import json
 import re
+import time
+
+
+def wait_on_create_namespace(namespace_name):
+    creating = True
+    while creating:
+        _, stdout, _ = run_sh(f"aws redshift-serverless get-namespace --namespace-name {namespace_name}")
+
+        # fail fast if stdout is not produced
+        if stdout == "":
+            raise Exception("Namespace creation failed")
+
+        # read namespace creation status
+        namespace = json.loads(stdout)
+
+        # sleep for 15s if it's still creating
+        if namespace["namespace"]["status"] == "CREATING":
+            time.sleep(15)
+
+        # return if namespace is created
+        elif namespace["namespace"]["status"] == "AVAILABLE":
+            return
+
+        # otherwise, set creating to False
+        else:
+            creating = False
+
+    # if the status is not creating and the namespace is not created, raise an exception
+    raise Exception("Namespace creation failed")
+
+
+def wait_on_create_workgroup(workgroup_name):
+    creating = True
+    while creating:
+        _, stdout, _ = run_sh(f"aws redshift-serverless get-workgroup --workgroup-name {workgroup_name}")
+
+        # fail fast if stdout is not produced
+        if stdout == "":
+            raise Exception("Workgroup creation failed")
+
+        # read workgroup creation status
+        workgroup = json.loads(stdout)
+
+        # sleep for 15s if it's still creating
+        if workgroup["workgroup"]["status"] == "CREATING":
+            time.sleep(15)
+
+        # return if workgroup is created
+        elif workgroup["workgroup"]["status"] == "AVAILABLE":
+            return
+
+        # otherwise, set creating to False
+        else:
+            creating = False
+
+    # if the status is not creating and the workgroup is not created, raise an exception
+    raise Exception("Workgroup creation failed")
+
+
+def wait_on_delete_workgroup(workgroup_name):
+    deleting = True
+    while deleting:
+        _, stdout, stderr = run_sh(f"aws redshift-serverless get-workgroup --workgroup-name {workgroup_name}")
+
+        # check if workgroup is still deleting
+        if stdout != "":
+            workgroup = json.loads(stdout)
+            deleting = workgroup["workgroup"]["status"] == "DELETING"
+
+        # if workgroup is deleted then return
+        elif stdout == "" and "ResourceNotFoundException" in stderr:
+            return
+
+        # otherwise, set deleting to False
+        else:
+            deleting = False
+
+        if deleting:
+            # sleep for 15s if this fails
+            time.sleep(15)
+
+    # if the status is not deleting and the workgroup is not deleted, raise an exception
+    raise Exception("Workgroup deletion failed")
+
+
+def wait_on_delete_namespace(namespace_name):
+    deleting = True
+    while deleting:
+        _, stdout, stderr = run_sh(f"aws redshift-serverless get-namespace --namespace-name {namespace_name}")
+
+        # check if namespace is still deleting
+        if stdout != "":
+            namespace = json.loads(stdout)
+            deleting = namespace["namespace"]["status"] == "DELETING"
+
+        # if namespace is deleted then return
+        elif stdout == "" and "ResourceNotFoundException" in stderr:
+            return
+
+        # otherwise, set deleting to False
+        else:
+            deleting = False
+
+        if deleting:
+            # sleep for 15s if it's still deleting
+            time.sleep(15)
+
+    # if the status is not deleting and the namespace is not deleted, raise an exception
+    raise Exception("Namespace deletion failed")
 
 
 class TestAgent:
@@ -199,7 +308,64 @@ class TestAgent:
         # assert that there wasn't an error
         assert stdout != ""
 
-        # check that cluster is present and has correct configuration
+        # check that cluster is no longer present
         clusters = json.loads(stdout)
         cluster_ids = list(map(lambda cluster: cluster['ClusterIdentifier'], clusters['Clusters']))
         assert cluster_id not in cluster_ids
+
+    @pytest.mark.parametrize(
+        "redshift_serverless_input,redshift_serverless_expected",
+        [
+            (REDSHIFT_SERVERLESS_INPUT_1, REDSHIFT_SERVERLESS_EXPECTED_1),
+            (REDSHIFT_SERVERLESS_INPUT_2, REDSHIFT_SERVERLESS_EXPECTED_2),
+            (REDSHIFT_SERVERLESS_INPUT_3, REDSHIFT_SERVERLESS_EXPECTED_3),
+        ],
+        ids=[
+            'redshift_serverless_1',
+            'redshift_serverless_2',
+            'redshift_serverless_3',
+        ]
+    )
+    def test_redshift_serverless(self, agent_chain, redshift_serverless_input, redshift_serverless_expected):
+        # execute agent given input
+        create_redshift_namespace_input = redshift_serverless_input[0]
+        create_redshift_workgroup_input = redshift_serverless_input[1]
+        delete_redshift_workgroup_input = redshift_serverless_input[2]
+        delete_redshift_namespace_input = redshift_serverless_input[3]
+        namespace_name = redshift_serverless_expected["namespaceName"]
+        workgroup_name = redshift_serverless_expected["workgroupName"]
+
+        # run create namespace command
+        _ = agent_chain.run(input=create_redshift_namespace_input)
+
+        # wait for namespace to finish creating
+        wait_on_create_namespace(namespace_name)
+
+        # run create workgroup command
+        _ = agent_chain.run(input=create_redshift_workgroup_input)
+
+        # wait for workgroup to finish creating
+        wait_on_create_workgroup(workgroup_name)
+
+        # check that workgroup and namespace are created with correct configuration
+        _, ns_stdout, _ = run_sh(f"aws redshift-serverless get-namespace --namespace-name {namespace_name}")
+        _, wg_stdout, _ = run_sh(f"aws redshift-serverless get-workgroup --workgroup-name {workgroup_name}")
+        namespace = json.loads(ns_stdout)
+        workgroup = json.loads(wg_stdout)
+        for key, value in redshift_serverless_expected["namespaceKeys"].items():
+            assert namespace[key] == value
+
+        for key, value in redshift_serverless_expected["workgroupKeys"].items():
+            assert workgroup[key] == value
+
+        # run delete workgroup command
+        _ = agent_chain.run(input=delete_redshift_workgroup_input)
+
+        # wait for workgroup to finish deleting
+        wait_on_delete_workgroup(workgroup_name)
+
+        # run delete namespace command
+        _ = agent_chain.run(input=delete_redshift_namespace_input)
+
+        # wait for namespace to finish deleting
+        wait_on_delete_namespace(namespace_name)

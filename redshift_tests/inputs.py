@@ -57,3 +57,38 @@ REDSHIFT_CLUSTER_EXPECTED_2 = "MRussoSingleNodeTestCluster", "ds2.xlarge", 1
 
 REDSHIFT_CLUSTER_INPUT_3 = ("Please create a redshift cluster called MRussoTestCluster2 with 3 nodes of type dc2.large.", "Please delete MRussoTestCluster2")
 REDSHIFT_CLUSTER_EXPECTED_3 = "MRussoTestCluster2", "dc2.large", 3
+
+###########################################################
+###### Create / Delete Redshift Serverless input(s) #######
+###########################################################
+REDSHIFT_SERVERLESS_INPUT_1 = (
+    "Please create a redshift serverless namespace called MRussoTestNamespace1",
+    "Please create a redshift serverless workgroup called MRussoTestWorkgroup1",
+    "Please delete MRussoTestWorkgroup1",
+    "Please delete MRussoTestNamespace1",
+)
+REDSHIFT_SERVERLESS_EXPECTED_1 = {
+    "namespaceName": "MRussoTestNamespace1",
+    "workgroupName": "MRussoTestWorkgroup1",
+    "namespaceKeys": {},
+    "workgroupKeys": {},
+}
+
+REDSHIFT_SERVERLESS_INPUT_1 = (
+    "Please create a redshift serverless namespace called MRussoTestNamespace2 with admin username 'hello', password 'world', and database 'fugazi'",
+    "Please create a redshift serverless workgroup called MRussoTestWorkgroup2 using port 1234 and security group sg-38485253",
+    "Please delete MRussoTestWorkgroup2",
+    "Please delete MRussoTestNamespace2",
+)
+REDSHIFT_SERVERLESS_EXPECTED_1 = {
+    "namespaceName": "MRussoTestNamespace2",
+    "workgroupName": "MRussoTestWorkgroup2",
+    "namespaceKeys": {
+        "adminUsername": "hello",
+        "dbName": "fugazi",
+    },
+    "workgroupKeys": {
+        "port": 1234,
+        "securityGroupIds": ["sg-38485253"],
+    },
+}
