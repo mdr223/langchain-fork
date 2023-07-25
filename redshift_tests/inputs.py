@@ -74,13 +74,13 @@ REDSHIFT_SERVERLESS_EXPECTED_1 = {
     "workgroupKeys": {},
 }
 
-REDSHIFT_SERVERLESS_INPUT_1 = (
+REDSHIFT_SERVERLESS_INPUT_2 = (
     "Please create a redshift serverless namespace called MRussoTestNamespace2 with admin username 'hello', password 'world', and database 'fugazi'",
     "Please create a redshift serverless workgroup called MRussoTestWorkgroup2 using port 1234 and security group sg-38485253",
     "Please delete MRussoTestWorkgroup2",
     "Please delete MRussoTestNamespace2",
 )
-REDSHIFT_SERVERLESS_EXPECTED_1 = {
+REDSHIFT_SERVERLESS_EXPECTED_2 = {
     "namespaceName": "MRussoTestNamespace2",
     "workgroupName": "MRussoTestWorkgroup2",
     "namespaceKeys": {

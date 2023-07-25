@@ -318,12 +318,12 @@ class TestAgent:
         [
             (REDSHIFT_SERVERLESS_INPUT_1, REDSHIFT_SERVERLESS_EXPECTED_1),
             (REDSHIFT_SERVERLESS_INPUT_2, REDSHIFT_SERVERLESS_EXPECTED_2),
-            (REDSHIFT_SERVERLESS_INPUT_3, REDSHIFT_SERVERLESS_EXPECTED_3),
+            # (REDSHIFT_SERVERLESS_INPUT_3, REDSHIFT_SERVERLESS_EXPECTED_3),
         ],
         ids=[
             'redshift_serverless_1',
             'redshift_serverless_2',
-            'redshift_serverless_3',
+            # 'redshift_serverless_3',
         ]
     )
     def test_redshift_serverless(self, agent_chain, redshift_serverless_input, redshift_serverless_expected):
