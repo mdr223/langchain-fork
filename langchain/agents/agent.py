@@ -664,6 +664,7 @@ class AgentExecutor(Chain):
 
     agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]
     tools: Sequence[BaseTool]
+    stored_intermediate_steps: list = []
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = 15
     max_execution_time: Optional[float] = None
