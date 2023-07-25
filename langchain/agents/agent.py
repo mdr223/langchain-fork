@@ -765,6 +765,8 @@ class AgentExecutor(Chain):
         intermediate_steps: list,
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
+        # TODO: remove
+        self.stored_intermediate_steps = intermediate_steps
         if run_manager:
             run_manager.on_agent_finish(output, color="green", verbose=self.verbose)
         final_output = output.return_values
