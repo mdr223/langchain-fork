@@ -664,7 +664,6 @@ class AgentExecutor(Chain):
 
     agent: Union[BaseSingleActionAgent, BaseMultiActionAgent]
     tools: Sequence[BaseTool]
-    stored_intermediate_steps: list = []
     return_intermediate_steps: bool = False
     max_iterations: Optional[int] = 15
     max_execution_time: Optional[float] = None
@@ -766,8 +765,6 @@ class AgentExecutor(Chain):
         intermediate_steps: list,
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
-        # TODO: remove
-        self.stored_intermediate_steps = intermediate_steps
         if run_manager:
             run_manager.on_agent_finish(output, color="green", verbose=self.verbose)
         final_output = output.return_values
