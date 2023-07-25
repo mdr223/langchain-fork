@@ -23,7 +23,7 @@ class RedshiftConvoOutputParser(AgentOutputParser):
         if "Tools:" in text:
             try:
                 # regex to match thought and tools
-                regex = r"[\n]*Thought: (.*?)[\n]*Tools: (.*?)\n"
+                regex = r"[\n]*Thought: (.*?)[\n]*Tools: (.*)"
                 match = re.search(regex, text)
                 if not match:
                     raise OutputParserException(f"Could not parse LLM ToolSearch output: `{text}`")
@@ -31,7 +31,7 @@ class RedshiftConvoOutputParser(AgentOutputParser):
                 text_to_return = f"\nThought: {match.group(1)}\nTools: {tools}"
                 return AgentAction("ToolSearch", tools, text_to_return)
             except:
-                raise OutputParserException(f"Could not parse LLM output: `{text}`")
+                raise OutputParserException(f"Could not parse LLM ToolSearch output: `{text}`")
 
         # handle Action
         regex = r"Action: (.*?)[\n]*Action Input:"
