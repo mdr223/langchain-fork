@@ -90,7 +90,7 @@ def agent_chain(tools_with_toolsearch, memory, request):
 
     ### OpenAI
     else:
-        llm = OpenAI(temperature=0, model_name=llm_name)
+        llm = OpenAI(temperature=0, model_name=llm_name, max_tokens=-1)
 
     # construct agent chain given tools, LLM, and memory
     agent_chain = initialize_agent(
