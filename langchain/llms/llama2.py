@@ -2,10 +2,9 @@ from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 
 from pydantic import Field, root_validator
-from transformers import AutoTokenizer
+from transformers import LlamaForCausalLM, LlamaTokenizer
 from typing import Any, Dict, List, Mapping, Optional
 
-import transformers
 import torch
 
 
@@ -16,23 +15,36 @@ class Llama2(LLM):
     # 70b: "meta-llama/Llama-2-70b-chat-hf"
     model_name: str = Field("meta-llama/Llama-2-7b-chat-hf", alias="model")
     """Model name to use."""
-    max_length: int = 4000
+    max_new_tokens: int = 4096
     """The maximum number of tokens to generate in the completion."""
-    pred = None  #: :meta private:
+    model = None  #: :meta private:
     """LLM model object."""
     tokenizer = None
     """LLM tokenizer object."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
-        """Initialize predictor using model_name."""
-        values["tokenizer"] = AutoTokenizer.from_pretrained(values["model_name"])
-        values["pred"] = transformers.pipeline(
-            "text-generation",
-            model=values["model_name"],
-            torch_dtype=torch.float16,
+        """Initialize model and tokenizer using model_name."""
+        # init model
+        model = LlamaForCausalLM.from_pretrained(
+            values["model_name"],
+            return_dict=True,
+            load_in_8bit=False,
             device_map="auto",
+            low_cpu_mem_usage=True,
         )
+        _ = model.eval()
+        values["model"] = model
+
+        # init tokenizer
+        tokenizer = LlamaTokenizer.from_pretrained(values["model_name"])
+        _ = tokenizer.add_special_tokens(
+            {
+            
+                "pad_token": "<PAD>",
+            }
+        )
+        values["tokenizer"] = tokenizer
 
         return values
 
@@ -45,7 +57,7 @@ class Llama2(LLM):
         """Get the identifying parameters."""
         return {
             "model_name": self.model_name,
-            "max_length": self.max_length,
+            "max_new_tokens": self.max_new_tokens,
         }
 
     def _call(
@@ -55,16 +67,21 @@ class Llama2(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
         # if stop is not None:
-        #     raise ValueError("stop kwargs are not permitted for now.")j
+        #     raise ValueError("stop kwargs are not permitted for now.")
 
-        # execute prediction for a single sequence
-        sequences = self.pred(
-            prompt,
-            do_sample=True,
-            top_k=1,
-            num_return_sequences=1,
-            eos_token_id=self.tokenizer.eos_token_id,
-            max_length=self.max_length,
-        )
+        # tokenize prompt and send to device(s)
+        batch = self.tokenizer(prompt, return_tensors="pt")
+        batch = {k: v.to("cuda") for k, v in batch.items()}
 
-        return sequences[0]['generated_text']
+        # execute model on prompt
+        with torch.no_grad():
+            outputs = model.generate(
+                **batch,
+                max_new_tokens=self.max_new_tokens,
+                do_sample=False
+            )
+
+        # decode output
+        output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+        return output_text
