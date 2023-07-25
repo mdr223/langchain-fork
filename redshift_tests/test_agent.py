@@ -186,7 +186,10 @@ class TestAgent:
 
         # assert that the description matches
         role = json.loads(stdout)
-        assert role['Role']['Description'] == description
+        if description is not None:
+            assert role['Role']['Description'] == description
+        else:
+            assert "Description" not in role['Role'].keys()
 
         _ = run_sh(f"aws iam delete-role --role-name {role_name}", silent=True)
 
