@@ -553,7 +553,7 @@ class CreateRedshiftCluster(AWSTool):
     *DEFAULTS*:
     If a user does not specify a `NodeType`, then use "ds2.xlarge".
     If a user does not specify a `MasterUsername`, then use "admin".
-    If a user does not specify a `MasterPassword`, then use "adminpass".
+    If a user does not specify a `MasterPassword`, then use "Testing123".
     If a user does not specify a `ClusterType`, then use "multi-node".
     If a user does not specify a `NumberOfNodes`, AND `ClusterType` is "multi-node", then use 2.
     If a user does not specify a `NumberOfNodes`, And `ClusterType` is "single-node", then use 1.
@@ -572,19 +572,19 @@ class CreateRedshiftCluster(AWSTool):
         "ClusterIdentifier": "MyCluster",
         "NodeType": "ds2.xlarge",
         "MasterUsername": "admin",
-        "MasterPassword": "adminpass",
+        "MasterPassword": "Testing123",
         "ClusterType": "multi-node",
         "NumberOfNodes": 2
     }
     ```
 
-    As another example, if you wanted to create a single-node cluster `MyCluster1` with the admin username "hello" and admin password "world" you would generate the JSON:
+    As another example, if you wanted to create a single-node cluster `MyCluster1` with the admin username "hello" and admin password "World" you would generate the JSON:
     ```
     {
         "ClusterIdentifier": "MyCluster1",
         "NodeType": "ds2.xlarge",
         "MasterUsername": "hello",
-        "MasterPassword": "world",
+        "MasterPassword": "World",
         "ClusterType": "single-node",
         "NumberOfNodes": 1
     }
@@ -596,7 +596,7 @@ class CreateRedshiftCluster(AWSTool):
         "ClusterIdentifier": "MyCluster2",
         "NodeType": "ra3.xlplus",
         "MasterUsername": "admin",
-        "MasterPassword": "adminpass",
+        "MasterPassword": "Testing123",
         "ClusterType": "multi-node",
         "NumberOfNodes": 4
     }

@@ -62,27 +62,27 @@ REDSHIFT_CLUSTER_EXPECTED_3 = "MRussoTestCluster2", "dc2.large", 3
 ###### Create / Delete Redshift Serverless input(s) #######
 ###########################################################
 REDSHIFT_SERVERLESS_INPUT_1 = (
-    "Please create a redshift serverless namespace called MRussoTestNamespace1",
-    "Please create a redshift serverless workgroup called MRussoTestWorkgroup1",
-    "Please delete MRussoTestWorkgroup1",
-    "Please delete MRussoTestNamespace1",
+    "Please create a redshift serverless namespace called mrusso-test-namespace-1",
+    "Please create a redshift serverless workgroup called mrusso-test-workgroup-1",
+    "Please delete mrusso-test-workgroup-1",
+    "Please delete mrusso-test-namespace-1",
 )
 REDSHIFT_SERVERLESS_EXPECTED_1 = {
-    "namespaceName": "MRussoTestNamespace1",
-    "workgroupName": "MRussoTestWorkgroup1",
+    "namespaceName": "mrusso-test-namespace-1",
+    "workgroupName": "mrusso-test-workgroup-1",
     "namespaceKeys": {},
     "workgroupKeys": {},
 }
 
 REDSHIFT_SERVERLESS_INPUT_2 = (
-    "Please create a redshift serverless namespace called MRussoTestNamespace2 with admin username 'hello', password 'world', and database 'fugazi'",
-    "Please create a redshift serverless workgroup called MRussoTestWorkgroup2 using port 1234 and security group sg-38485253",
-    "Please delete MRussoTestWorkgroup2",
-    "Please delete MRussoTestNamespace2",
+    "Please create a redshift serverless namespace called mrusso-test-namespace-2 with admin username 'hello', password 'world', and database 'fugazi'",
+    "Please create a redshift serverless workgroup called mrusso-test-workgroup-2 using port 1234 and security group sg-38485253",
+    "Please delete mrusso-test-workgroup-2",
+    "Please delete mrusso-test-namespace-2",
 )
 REDSHIFT_SERVERLESS_EXPECTED_2 = {
-    "namespaceName": "MRussoTestNamespace2",
-    "workgroupName": "MRussoTestWorkgroup2",
+    "namespaceName": "mrusso-test-namespace-2",
+    "workgroupName": "mrusso-test-workgroup-2",
     "namespaceKeys": {
         "adminUsername": "hello",
         "dbName": "fugazi",
