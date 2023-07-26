@@ -49,14 +49,14 @@ ATTACH_IAM_POLICY_EXPECTED_2 = "CloudWatchLogsReadOnlyAccess", "redshift-llm-age
 ########################################################
 ###### Create / Delete Redshift Cluster input(s) #######
 ########################################################
-REDSHIFT_CLUSTER_INPUT_1 = ("Please create a redshift cluster called MRussoTestCluster1", "Please delete MRussoTestCluster1")
-REDSHIFT_CLUSTER_EXPECTED_1 = "MRussoTestCluster1", "ds2.xlarge", 2
+REDSHIFT_CLUSTER_INPUT_1 = ("Please create a redshift cluster called mrusso-test-cluster-1", "Please delete mrusso-test-cluster-1")
+REDSHIFT_CLUSTER_EXPECTED_1 = "mrusso-test-cluster-1", "dc2.large", 2
 
-REDSHIFT_CLUSTER_INPUT_2 = ("Please create a single-node redshift cluster called MRussoSingleNodeTestCluster", "Please delete MRussoSingleNodeTestCluster")
-REDSHIFT_CLUSTER_EXPECTED_2 = "MRussoSingleNodeTestCluster", "ds2.xlarge", 1
+REDSHIFT_CLUSTER_INPUT_2 = ("Please create a single-node redshift cluster called mrusso-single-node-test-cluster", "Please delete mrusso-single-node-test-cluster")
+REDSHIFT_CLUSTER_EXPECTED_2 = "mrusso-single-node-test-cluster", "dc2.large", 1
 
-REDSHIFT_CLUSTER_INPUT_3 = ("Please create a redshift cluster called MRussoTestCluster2 with 3 nodes of type dc2.large.", "Please delete MRussoTestCluster2")
-REDSHIFT_CLUSTER_EXPECTED_3 = "MRussoTestCluster2", "dc2.large", 3
+REDSHIFT_CLUSTER_INPUT_3 = ("Please create a redshift cluster called mrusso-test-cluster-2 with 3 nodes of type ra3.4xlarge.", "Please delete mrusso-test-cluster-2")
+REDSHIFT_CLUSTER_EXPECTED_3 = "mrusso-test-cluster-2", "ra3.4xlarge", 3
 
 ###########################################################
 ###### Create / Delete Redshift Serverless input(s) #######

@@ -547,7 +547,7 @@ class CreateRedshiftCluster(AWSTool):
     The following dictionary keys are *REQUIRED*: `ClusterIdentifier`, `NodeType`, `MasterUsername`, `MasterUserPassword`, `ClusterType`, and `NumberOfNodes`.
 
     *DEFAULTS*:
-    If a user does not specify a `NodeType`, then use "ds2.xlarge".
+    If a user does not specify a `NodeType`, then use "dc2.large".
     If a user does not specify a `MasterUsername`, then use "admin".
     If a user does not specify a `MasterUserPassword`, then use "Testing123".
     If a user does not specify a `ClusterType`, then use "multi-node".
@@ -566,7 +566,7 @@ class CreateRedshiftCluster(AWSTool):
     ```
     {
         "ClusterIdentifier": "MyCluster",
-        "NodeType": "ds2.xlarge",
+        "NodeType": "dc2.large",
         "MasterUsername": "admin",
         "MasterUserPassword": "Testing123",
         "ClusterType": "multi-node",
@@ -578,7 +578,7 @@ class CreateRedshiftCluster(AWSTool):
     ```
     {
         "ClusterIdentifier": "MyCluster1",
-        "NodeType": "ds2.xlarge",
+        "NodeType": "dc2.large",
         "MasterUsername": "hello",
         "MasterUserPassword": "World",
         "ClusterType": "single-node",

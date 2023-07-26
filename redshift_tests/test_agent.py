@@ -292,8 +292,18 @@ class TestAgent:
         # run create cluster command
         _ = agent_chain.run(input=create_redshift_cluster_input)
 
-        # wait for cluster to finish creating
+        # get expected info
         cluster_id, node_type, num_nodes = redshift_cluster_expected
+
+        # sleep for 10s and check if cluster was created
+        time.sleep(10)
+        _, stdout, _ = run_sh(f"aws redshift describe-clusters", silent=True)
+        clusters = json.loads(stdout)
+        cluster_ids = list(map(lambda cluster: cluster['ClusterIdentifier'], clusters['Clusters']))
+        if cluster_id not in cluster_ids:
+            raise Exception(f"Cluster {cluster_id} not created")
+
+        # wait for cluster to finish creating
         _ = run_sh(f"aws redshift wait cluster-available --cluster-identifier {cluster_id}")
 
         # run command to see if it created cluster
