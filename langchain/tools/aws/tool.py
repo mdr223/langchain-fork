@@ -528,9 +528,6 @@ class CreateRedshiftCluster(AWSTool):
         "ClusterType": "multi-node"|"single-node",
         "NumberOfNodes": 123,
         "DBName": "string",
-        "ClusterSecurityGroups": [
-            "string",
-        ],
         "VpcSecurityGroupIds": [
             "string",
         ],
@@ -545,7 +542,6 @@ class CreateRedshiftCluster(AWSTool):
             "string",
         ],
         "DefaultIamRoleArn": "string",
-        "LoadSampleData": "string"
     }
     ```
     The following dictionary keys are *REQUIRED*: `ClusterIdentifier`, `NodeType`, `MasterUsername`, `MasterPassword`, `ClusterType`, and `NumberOfNodes`.

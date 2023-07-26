@@ -136,8 +136,8 @@ class TestAgent:
         ]
     )
     def test_create_bucket(self, agent_chain, create_bucket_input, create_bucket_expected):
-        # # patch tool
-        # mocker.patch('langchain.tools.aws.CreateS3Bucket._run')
+        # clear memory
+        agent_chain.memory.clear()
 
         # execute agent given input
         _ = agent_chain.run(input=create_bucket_input)
@@ -173,6 +173,9 @@ class TestAgent:
         ]
     )
     def test_create_iam_role(self, agent_chain, create_iam_role_input, create_iam_role_expected):
+        # clear memory
+        agent_chain.memory.clear()
+
         # execute agent given input
         _ = agent_chain.run(input=create_iam_role_input)
 
@@ -206,6 +209,9 @@ class TestAgent:
         ]
     )
     def test_attach_iam_policy(self, agent_chain, attach_iam_policy_input, attach_iam_policy_expected):
+        # clear memory
+        agent_chain.memory.clear()
+
         # execute agent given input
         _ = agent_chain.run(input=attach_iam_policy_input)
 
@@ -277,6 +283,9 @@ class TestAgent:
         ]
     )
     def test_redshift_cluster(self, agent_chain, redshift_cluster_input, redshift_cluster_expected):
+        # clear memory
+        agent_chain.memory.clear()
+
         # execute agent given input
         create_redshift_cluster_input, delete_redshift_cluster_input = redshift_cluster_input
 
@@ -284,6 +293,7 @@ class TestAgent:
         _ = agent_chain.run(input=create_redshift_cluster_input)
 
         # wait for cluster to finish creating
+        cluster_id, node_type, num_nodes = redshift_cluster_expected
         _ = run_sh(f"aws redshift wait cluster-available --cluster-identifier {cluster_id}")
 
         # run command to see if it created cluster
@@ -293,7 +303,6 @@ class TestAgent:
         assert stdout != ""
 
         # check that cluster is present and has correct configuration
-        cluster_id, node_type, num_nodes = redshift_cluster_expected
         clusters = json.loads(stdout)
         cluster = list(filter(lambda cluster: cluster['ClusterIdentifier'] == cluster_id, clusters['Clusters']))[0]
         assert cluster['NodeType'] == node_type
@@ -330,6 +339,9 @@ class TestAgent:
         ]
     )
     def test_redshift_serverless(self, agent_chain, redshift_serverless_input, redshift_serverless_expected):
+        # clear memory
+        agent_chain.memory.clear()
+
         # execute agent given input
         create_redshift_namespace_input = redshift_serverless_input[0]
         create_redshift_workgroup_input = redshift_serverless_input[1]
