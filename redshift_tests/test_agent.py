@@ -222,7 +222,7 @@ class TestAgent:
         assert policy_name in policy_names
 
         # remove policy from role
-        _ = run_sh(f"aws iam delete-role-policy --role-name {role_name} --policy-name {policy_name}")
+        _ = run_sh(f"aws iam detach-role-policy --role-name {role_name} --policy-arn arn:aws:iam::aws:policy/{policy_name}")
 
     # NOTE: KMS keys cannot be deleted, so let's not do this
     #

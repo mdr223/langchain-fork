@@ -534,36 +534,16 @@ class CreateRedshiftCluster(AWSTool):
         "VpcSecurityGroupIds": [
             "string",
         ],
-        "ClusterSubnetGroupName": "string",
-        "AvailabilityZone": "string",
-        "PreferredMaintenanceWindow": "string",
-        "ClusterParameterGroupName": "string",
-        "AutomatedSnapshotRetentionPeriod": 123,
-        "ManualSnapshotRetentionPeriod": 123,
         "Port": 123,
-        "ClusterVersion": "string",
-        "AllowVersionUpgrade": True|False,
-        "PubliclyAccessible": True|False,
-        "Encrypted": True|False,
-        "HsmClientCertificateIdentifier": "string",
-        "HsmConfigurationIdentifier": "string",
-        "ElasticIp": "string",
         "Tags": [
             {
                 "Key": "string",
                 "Value": "string"
             },
         ],
-        "KmsKeyId": "string",
-        "EnhancedVpcRouting": True|False,
-        "AdditionalInfo": "string",
         "IamRoles": [
             "string",
         ],
-        "MaintenanceTrackName": "string",
-        "SnapshotScheduleIdentifier": "string",
-        "AvailabilityZoneRelocation": True|False,
-        "AquaConfigurationStatus": "enabled"|"disabled"|"auto",
         "DefaultIamRoleArn": "string",
         "LoadSampleData": "string"
     }
