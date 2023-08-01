@@ -75,7 +75,7 @@ class Llama2(LLM):
 
         # execute model on prompt
         with torch.no_grad():
-            outputs = model.generate(
+            outputs = self.model.generate(
                 **batch,
                 max_new_tokens=self.max_new_tokens,
                 do_sample=False

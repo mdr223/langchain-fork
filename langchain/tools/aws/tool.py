@@ -199,7 +199,7 @@ class AWSTool(BaseTool):
 class CreateIAMRole(AWSTool):
     """Create an IAM role in the user's AWS account with the given name."""
 
-    name = "Create AWS IAM role"
+    name = "CreateIAMRole"
  
     # NOTE: removed {"AssumeRolePolicyDocument": "string",} from tool input
     description = """This tool creates an IAM role in the user's account with the name provided to the tool.
@@ -274,7 +274,7 @@ class CreateIAMRole(AWSTool):
 class AttachIAMPolicy(AWSTool):
     """Attach the given IAM policy to the given IAM role in the user's AWS account."""
 
-    name = "Attach AWS IAM policy to AWS IAM role"
+    name = "AttachIAMPolicy"
     description = """This tool attaches the given IAM policy to the given IAM role.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -338,7 +338,7 @@ class AttachIAMPolicy(AWSTool):
 class CreateKMSKey(AWSTool):
     """Create key in Key Management Service in the user's AWS account."""
 
-    name = "Create Key Management Service (KMS) key"
+    name = "CreateKMSKey"
     description = """This tool creates a KMS key.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -418,7 +418,7 @@ class CreateKMSKey(AWSTool):
 class CreateS3Bucket(AWSTool):
     """Create S3 Bucket in the user's AWS account."""
 
-    name = "Create S3 Bucket"
+    name = "CreateS3Bucket"
     description = """This tool creates an S3 bucket with the given bucket name.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -515,7 +515,7 @@ class CreateS3Bucket(AWSTool):
 
 class CreateRedshiftCluster(AWSTool):
     """Create a Redshift cluster in the user's AWS account."""
-    name = "Create Redshift cluster"
+    name = "CreateRedshiftCluster"
     description = """This tool creates a Redshift Cluster using the given `cluster_name` in the user's AWS account.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -648,7 +648,7 @@ class CreateRedshiftCluster(AWSTool):
 class CreateRedshiftServerlessNamespace(AWSTool):
     """Create a namespace for Redshift Serverless in the user's AWS account."""
 
-    name = "Create Redshift Serverless namespace"
+    name = "CreateRedshiftServerlessNamespace"
     description = """This tool creates a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -741,7 +741,7 @@ class CreateRedshiftServerlessNamespace(AWSTool):
 class CreateRedshiftServerlessWorkgroup(AWSTool):
     """Create a workgroup for Redshift Serverless in the user's AWS account."""
 
-    name = "Create Redshift Serverless workgroup"
+    name = "CreateRedshiftServerlessWorkgroup"
     description = """This tool creates a Redshift Serverless workgroup using the given `workgroup_name` in the namespace specified by `namespace_name`.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -835,7 +835,7 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
 class DeleteRedshiftCluster(AWSTool):
     """Delete a cluster from Redshift in the user's AWS account."""
 
-    name = "Delete Redshift cluster"
+    name = "DeleteRedshiftCluster"
     description = """This tool deletes a Redshift cluster using the given cluster identifier.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -904,7 +904,7 @@ class DeleteRedshiftCluster(AWSTool):
 class DeleteRedshiftServerlessNamespace(AWSTool):
     """Delete a namespace from Redshift Serverless in the user's AWS account."""
 
-    name = "Delete Redshift Serverless namespace"
+    name = "DeleteRedshiftServerlessNamespace"
     description = """This tool deletes a Redshift Serverless namespace using the given `namespace_name` in the user's AWS account.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -967,7 +967,7 @@ class DeleteRedshiftServerlessNamespace(AWSTool):
 class DeleteRedshiftServerlessWorkgroup(AWSTool):
     """Delete a workgroup from Redshift Serverless in the user's AWS account."""
 
-    name = "Delete Redshift Serverless workgroup"
+    name = "DeleteRedshiftServerlessWorkgroup"
     description = """This tool deletes a Redshift Serverless workgroup using the given `workgroup_name`.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -1025,7 +1025,7 @@ class DeleteRedshiftServerlessWorkgroup(AWSTool):
 class LoadTableFromS3Cluster(AWSTool):
     """Load a table from a parquet file or prefix in S3 into a Redshift Cluster."""
 
-    name = "Load S3 table into Redshift cluster."
+    name = "LoadTableFromS3Cluster"
     # description = (
     #     "This tool loads a database table from a (set of) parquet file(s) in S3 into a provisioned Redshift cluster."
     #     " The input to this tool should be a comma separated list of strings of length two, representing the s3 key or prefix of the dataset you wish to load into redshift and the name of the Redshift cluster you wish to load the data into."
@@ -1160,7 +1160,7 @@ class LoadTableFromS3Cluster(AWSTool):
 class LoadTableFromS3Serverless(AWSTool):
     """Load a table from a parquet file or prefix in S3 into Redshift Serverless."""
 
-    name = "Load S3 table into Redshift Serverless workgroup"
+    name = "LoadTableFromS3Serverless"
     description = """This tool loads a database table from a (set of) parquet file(s) in S3 into a workgroup/database in Redshift Serverless.
 
     The input to this tool should be a JSON dictionary object with the following format:
@@ -1281,7 +1281,7 @@ class LoadTableFromS3Serverless(AWSTool):
 class SelectQueryDataFromTableServerless(AWSTool):
     """Perform a select query on a specified table in Redshift."""
 
-    name = "Run select query on Redshift Serverless table"
+    name = "SelectQueryDataFromTableServerless"
     description = """This tool runs a select query on a given table in Redshift Serverless.
 
     The input to this tool should be a JSON dictionary object with the following format:
