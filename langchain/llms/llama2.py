@@ -82,6 +82,6 @@ class Llama2(LLM):
             )
 
         # decode output
-        output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        output_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         return output_text
