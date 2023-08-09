@@ -1396,7 +1396,7 @@ class SelectQueryDataFromTableServerless(AWSTool):
         # create database connection
         # - hostname format: workgroup-name.account-number.aws-region.redshift-serverless.amazonaws.com
         conn = redshift_connector.connect(
-            host=f"{workgroup_name}.276726865914.us-east-1.redshift-serverless.amazonaws.com",
+            host=f"{input_kwargs['workgroupName']}.276726865914.us-east-2.redshift-serverless.amazonaws.com",
             database=input_kwargs['dbName'],
             user=input_kwargs['adminUsername'],
             password=input_kwargs['adminUserPassword'],
