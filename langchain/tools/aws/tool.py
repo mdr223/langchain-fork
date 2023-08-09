@@ -863,7 +863,7 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
 
         rs_client = boto3.client('redshift-serverless')
         if "securityGroupIds" not in create_workgroup_kwargs:
-            create_workgroup_kwargs["securityGroupIds"] = create_redshift_security_group()
+            create_workgroup_kwargs["securityGroupIds"] = [create_redshift_security_group()]
 
         response = None
         try:
