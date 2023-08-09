@@ -1211,7 +1211,7 @@ class LoadTableFromS3Serverless(AWSTool):
         "workgroupName": "`workgroup_name`",
         "adminUsername": "`username`",
         "adminUserPassword": "`password`",
-        "dbName": "`db_name`"
+        "dbName": "`db_name`",
         "tableName": "string"
     }
     ```
