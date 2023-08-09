@@ -862,6 +862,8 @@ class CreateRedshiftServerlessWorkgroup(AWSTool):
             raise Exception("Failed to parse LLM input to CreateRedshiftServerlessWorkgroup tool")
 
         rs_client = boto3.client('redshift-serverless')
+        if "securityGroupIds" not in create_workgroup_kwargs:
+            create_workgroup_kwargs["securityGroupIds"] = create_redshift_security_group()
 
         response = None
         try:
