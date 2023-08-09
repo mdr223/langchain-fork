@@ -859,6 +859,7 @@ class AgentExecutor(Chain):
                 if return_direct:
                     tool_run_kwargs["llm_prefix"] = ""
                 # We then call the tool on the tool input to get an observation
+                # TODO: wrap this in a try-except that catches BadAWSCommandException and prompts the model to correct itself
                 observation = tool.run(
                     agent_action.tool_input,
                     verbose=self.verbose,

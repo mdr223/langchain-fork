@@ -196,6 +196,47 @@ class AWSTool(BaseTool):
         raise NotImplementedError("Tool does not support async")
 
 
+class BashAWSTool(BaseTool):
+    """Base class for a tool that calls some specific functionality of the AWS CLI."""
+    name = "BashAWSTool"
+    description = """This tool executes AWS CLI commands that are passed into it.
+
+    For example, if this tool is given the input:
+    \"\"\"
+    aws create redshift-cluster --cluster-identifier my-cluster --node-type dc2.large --master-username admin --master-user-password SecurePassword123
+    \"\"\"
+    It will execute this aws command and create the Redshift cluster as specified.
+
+    The only requirement of this tool is that it is provided a syntactically correct AWS CLI v2 command to execute.
+    """
+
+    @property
+    def short_description(self) -> str:
+        return self.description.split('.')[0]
+
+    def _run(
+        self,
+        aws_command: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        """Use the tool."""
+        # parse input
+        try:
+            aws_command = pass
+        except Exception as e:
+            # TODO: prompt model to try to self-correct up to N times before giving up
+            raise Exception("Failed to parse LLM input to BashAWSTool tool")
+
+        # execute command
+        # TODO: also try to self-correct command up to N times here
+        _, stdout, stderr = run_sh(aws_command)
+
+        # prepare and return response
+        response = stdout if stdout != "" else stderr
+
+        return response
+
+
 class CreateIAMRole(AWSTool):
     """Create an IAM role in the user's AWS account with the given name."""
 
@@ -1039,8 +1080,8 @@ class LoadTableFromS3Cluster(AWSTool):
     {
         "S3Key": "`s3_key_or_prefix`",
         "clusterName": "`cluster_name`",
-        "adminUserPassword": "`password`",
         "adminUsername": "`username`",
+        "adminUserPassword": "`password`",
         "dbName": "`db_name`"
         "tableName": "string"
     }
@@ -1060,8 +1101,8 @@ class LoadTableFromS3Cluster(AWSTool):
     {
         "S3Key": "s3://somebucket/someprefix/file.pq",
         "clusterName": "SomeCluster",
-        "adminUserPassword": "admin",
-        "adminUsername": "Testing123",
+        "adminUsername": "admin",
+        "adminUserPassword": "Testing123",
         "dbName": "dev"
     }
     ```
@@ -1168,8 +1209,8 @@ class LoadTableFromS3Serverless(AWSTool):
     {
         "S3Key": "`s3_key_or_prefix`",
         "workgroupName": "`workgroup_name`",
-        "adminUserPassword": "`password`",
         "adminUsername": "`username`",
+        "adminUserPassword": "`password`",
         "dbName": "`db_name`"
         "tableName": "string"
     }
@@ -1189,8 +1230,8 @@ class LoadTableFromS3Serverless(AWSTool):
     {
         "S3Key": "s3://somebucket/someprefix/file.pq",
         "workgroupName": "SomeWorkgroup",
-        "adminUserPassword": "admin",
-        "adminUsername": "Testing123",
+        "adminUsername": "admin",
+        "adminUserPassword": "Testing123",
         "dbName": "dev"
     }
     ```
@@ -1229,7 +1270,7 @@ class LoadTableFromS3Serverless(AWSTool):
         # create database connection
         # - hostname format: workgroup-name.account-number.aws-region.redshift-serverless.amazonaws.com
         conn = redshift_connector.connect(
-            host=f"{input_kwargs['workgroupName']}.276726865914.us-east-1.redshift-serverless.amazonaws.com",
+            host=f"{input_kwargs['workgroupName']}.276726865914.us-east-2.redshift-serverless.amazonaws.com",
             database=input_kwargs['dbName'],
             user=input_kwargs['adminUsername'],
             password=input_kwargs['adminUserPassword'],
