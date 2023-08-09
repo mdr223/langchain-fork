@@ -1411,7 +1411,7 @@ class SelectQueryDataFromTableServerless(AWSTool):
         try:
             cursor.execute(select_cmd)
             result = cursor.fetchall()
-            result_df = pd.DataFrame(result, columns=columns)
+            result_df = pd.DataFrame(result, columns=input_kwargs['columns'])
             response = f"\n{result_df.head(MAX_RESULTS)}"
         except Exception as e:
             response = e
