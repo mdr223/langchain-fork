@@ -1355,8 +1355,8 @@ class SelectQueryDataFromTableServerless(AWSTool):
     {
         "workgroupName": "SomeWorkgroup",
         "tableName": "SomeTable",
-        "adminUserPassword": "admin",
-        "adminUsername": "Testing123",
+        "adminUsername": "admin",
+        "adminUserPassword": "Testing123",
         "dbName": "dev",
         "columns": ["ColumnA", "ColumnB"]
     }
@@ -1367,8 +1367,8 @@ class SelectQueryDataFromTableServerless(AWSTool):
     {
         "workgroupName": "SomeWorkgroup",
         "tableName": "SomeTable",
-        "adminUserPassword": "admin",
-        "adminUsername": "Testing123",
+        "adminUsername": "admin",
+        "adminUserPassword": "Testing123",
         "dbName": "dev"
     }
     ```
