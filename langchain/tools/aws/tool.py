@@ -1304,7 +1304,7 @@ class LoadTableFromS3Serverless(AWSTool):
         for col, dtype in schema.items():
             col_str += f"{col} {dtype},"
 
-        create_table_cmd = f"""CREATE TABLE {table_name} ({col_str[:-1]});"""
+        create_table_cmd = f"""CREATE TABLE {input_kwargs['tableName']} ({col_str[:-1]});"""
 
         # command to copy table from S3 to Redshift
         copy_table_cmd = f"""COPY {input_kwargs['tableName']} FROM '{input_kwargs['S3Key']}' IAM_ROLE '{AGENT_IAM_ROLE}' FORMAT AS parquet"""
